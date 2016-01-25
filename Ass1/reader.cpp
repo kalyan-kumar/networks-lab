@@ -30,13 +30,13 @@ void pingServer(int sfd)
 
 	do
 	{
+		strcpy(buf, "\0");
 		if (recv (sfd, buf, 1000, 0) == -1)
     	{
         	perror ("Client: Receive failed");
         	exit (1);
     	}
     	printf("%s\n", buf);
-    	strcpy(buf, "\0");
 	}while(!strcmp(buf,"\0"));
 
 	printf("Which article do you want?\n");

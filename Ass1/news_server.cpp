@@ -155,6 +155,47 @@ void handleReader(int cfd)
 
 void handleReporter(int cfd)
 {
+	article temp;
+	char buf1[1000] = {'\0'}, buf2[1000] = {'\0'}, direct[1000], path[1000];
+	if(recv(cfd, buf1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+	printf("%s\n",buf1 );
+	if(strcmp(buf1,"Academic")==0)
+	{
+		temp.academic=true;
+
+	}
+	else
+		temp.academic=false;
+	if(recv(cfd, buf1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+		printf("%s\n",buf1 );
+
+	temp.heading=buf1;
+	if(recv(cfd, buf1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+		printf("%s\n",buf1 );
+
+	temp.date=buf1;
+	printf("lol here?\n");
+	// if(recv(cfd, buf1, 1000, 0) == -1)
+	// {
+	// 	printf("Didnt get what the client requested for\n");
+	// 	exit(1);
+	// }
+	// 	printf("lol %s\n",buf1 );
+
+	// temp.text=buf1;
+	temp.writeToFile();
 
 }
 
@@ -183,7 +224,7 @@ void handleClient(int cfd)
 	{
 		if(!strcmp(buf, "Reader"))
 			handleReader(cfd);
-		else if(!strcmp(buf, "Reader"))
+		else if(!strcmp(buf, "Reporter"))
 			handleReporter(cfd);
 		else if(!strcmp(buf, "Administrator"))
 			handleAdministrator(cfd);
@@ -206,6 +247,7 @@ int main(int argc, char **argv)
 	memset(&cli_addr, 0, addrlen);
 
 	sfd = socket(AF_INET, SOCK_STREAM, 0);
+
 	if(sfd==-1)
 	{
 		perror("Server: socket error");
@@ -214,7 +256,7 @@ int main(int argc, char **argv)
 	printf("Socket fd = %d\n", sfd);
 	
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21436);
+	srv_addr.sin_port   = htons(21434);
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{
 		perror("Network address conversion.\n");

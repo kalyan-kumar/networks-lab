@@ -34,7 +34,7 @@ void sendNews(string title){
 			exit(1);
 		}
 		getline(myfile, text);
-		if(send(sfd, text.c_str(), 20, 0) == -1)
+		if(send(sfd, text.c_str(), text.length(), 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
 	printf("Socket fd=%d\n", sfd);
 
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21436);
+	srv_addr.sin_port   = htons(21434);
 
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{
@@ -86,6 +86,21 @@ int main(int argc, char **argv)
 	cout<<"Enter the filename"<<endl;
 	string title;
 	cin>>title;
+	cout<<"Is it Academic or not.. input 1 or 0 respectively"<<endl;
+	int isac;
+	cin>>isac;
+	char acads[10];
+	if(isac)
+		strcpy(acads,"Academic");
+	else
+		strcpy(acads,"Non-Academic");
+
+	if(send(sfd, acads, 20, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+
 	sendNews(title);
 	
 
@@ -104,5 +119,6 @@ int main(int argc, char **argv)
         perror ("Client close failed");
         exit (1);
     }
+    return 0;
 
 }

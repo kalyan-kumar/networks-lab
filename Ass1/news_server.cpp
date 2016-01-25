@@ -163,6 +163,11 @@ void handleReporter(int cfd)
 		exit(1);
 	}
 	printf("%s\n",buf1 );
+	if(send(cfd,"done",20, 0) == -1)
+				{
+					perror("Server write failed");
+					exit(1);
+				}
 	if(strcmp(buf1,"Academic")==0)
 	{
 		temp.academic=true;
@@ -178,25 +183,35 @@ void handleReporter(int cfd)
 		printf("%s\n",buf1 );
 
 	temp.heading=buf1;
+	if(send(cfd,"done",20, 0) == -1)
+				{
+					perror("Server write failed");
+					exit(1);
+				}
 	if(recv(cfd, buf1, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-		printf("%s\n",buf1 );
+		
 
 	temp.date=buf1;
-	printf("lol here?\n");
-	// if(recv(cfd, buf1, 1000, 0) == -1)
-	// {
-	// 	printf("Didnt get what the client requested for\n");
-	// 	exit(1);
-	// }
-	// 	printf("lol %s\n",buf1 );
+	if(send(cfd,"done",20, 0) == -1)
+				{
+					perror("Server write failed");
+					exit(1);
+				}
+	
+	if(recv(cfd, buf1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+		
 
-	// temp.text=buf1;
+	temp.text=buf1;
 	temp.writeToFile();
-
+	printf("Succesfully added news\n");
 }
 
 void handleAdministrator(int cfd)
@@ -256,7 +271,7 @@ int main(int argc, char **argv)
 	printf("Socket fd = %d\n", sfd);
 	
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21434);
+	srv_addr.sin_port   = htons(21455);
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{
 		perror("Network address conversion.\n");

@@ -26,13 +26,24 @@ void sendNews(string title){
 			perror("Server write failed");
 			exit(1);
 		}
-		
+		char buf[1000] = {'\0'}; 
+    
+    	if (recv (sfd, buf, 1000, 0) == -1)
+	    {
+	        perror ("Client: Receive failed");
+	        exit (1);
+	    }
 		getline(myfile, date);
 		if(send(sfd, date.c_str(), 20, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
+		if (recv (sfd, buf, 1000, 0) == -1)
+	    {
+	        perror ("Client: Receive failed");
+	        exit (1);
+	    }
 		getline(myfile, text);
 		if(send(sfd, text.c_str(), text.length(), 0) == -1)
 		{
@@ -65,7 +76,7 @@ int main(int argc, char **argv)
 	printf("Socket fd=%d\n", sfd);
 
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21434);
+	srv_addr.sin_port   = htons(21455);
 
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{
@@ -100,6 +111,11 @@ int main(int argc, char **argv)
 			perror("Server write failed");
 			exit(1);
 		}
+		if (recv (sfd, acads, 1000, 0) == -1)
+	    {
+	        perror ("Client: Receive failed");
+	        exit (1);
+	    }
 
 	sendNews(title);
 	

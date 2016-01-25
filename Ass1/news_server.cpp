@@ -6,12 +6,205 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include "news_header.h"
+#include <dirent.h>
 
+void handleReader(int cfd)
+{
+	int siz;
+	string path1;
+	char buf1[1000] = {'\0'}, buf2[1000] = {'\0'}, direct[1000], path[1000];
+	if(recv(cfd, buf1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+	getcwd(direct, 1000);
+	DIR *d;
+	struct dirent *dp;
+	if(!strcmp(buf1, "Academic"))
+	{
+		strcat(direct, "/Academic/");
+		article tmp;
+		d = opendir(direct);
+		if(d)
+		{
+			strcpy(path, direct);
+			while((dp=readdir(d))!=NULL)
+			{
+				strcat(path, dp->d_name);
+				tmp.readFromFile(path, true);
+				siz = tmp.heading.size();
+				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+				{
+					perror("Server write failed");
+					exit(1);
+				}
+			}
+		}
+		else
+			perror("Cant open directory");
+		closedir(d);
+	}
+	else
+	{
+		strcat(direct, "/Non-Academic/");
+		article tmp;
+		d = opendir(direct);
+		if(d)
+		{
+			strcpy(path, direct);
+			while((dp=readdir(d))!=NULL)
+			{
+				strcat(path, dp->d_name);
+				tmp.readFromFile(path, false);
+				tmp.print();
+				siz = tmp.heading.size();
+				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+				{
+					perror("Server write failed");
+					exit(1);
+				}
+			}
+		}
+		else
+			perror("Cant open directory");
+		closedir(d);
+	}
+	if(recv(cfd, buf2, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+	if(!strcmp(buf1, "Academic"))
+	{
+		strcat(direct, "/Academic/");
+		article tmp;
+		d = opendir(direct);
+		if(d)
+		{
+			strcpy(path, direct);
+			while((dp=readdir(d))!=NULL)
+			{
+				strcat(path, dp->d_name);
+				tmp.readFromFile(path, true);
+				if(!strcmp(tmp.heading.c_str(), buf2))
+				{
+					siz = tmp.heading.size();
+					if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					siz = tmp.date.size();
+					if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					siz = tmp.text.size();
+					if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					break;
+				}
+			}
+		}
+		else
+			perror("Cant open directory");
+		closedir(d);
+	}
+	else
+	{
+		strcat(direct, "/Non-Academic/");
+		article tmp;
+		d = opendir(direct);
+		if(d)
+		{
+			strcpy(path, direct);
+			while((dp=readdir(d))!=NULL)
+			{
+				strcat(path, dp->d_name);
+				tmp.readFromFile(path, false);
+				if(!strcmp(tmp.heading.c_str(), buf2))
+				{
+					siz = tmp.heading.size();
+					if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					siz = tmp.date.size();
+					if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					siz = tmp.text.size();
+					if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
+					{
+						perror("Server write failed");
+						exit(1);
+					}
+					break;
+				}
+			}
+		}
+		else
+			perror("Cant open directory");
+		closedir(d);
+	}
+
+}
+
+void handleReporter(int cfd)
+{
+
+}
+
+void handleAdministrator(int cfd)
+{
+
+}
+
+void handleClient(int cfd)
+{
+	pid_t pidc;
+	char buf[1000];
+	if(recv(cfd, buf, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+	printf("Client type - %s\n", buf);
+
+	pidc = fork();
+	if(pidc<0)
+	{
+
+	}
+	else if(pidc == 0)
+	{
+		if(!strcmp(buf, "Reader"))
+			handleReader(cfd);
+		else if(!strcmp(buf, "Reader"))
+			handleReporter(cfd);
+		else if(!strcmp(buf, "Administrator"))
+			handleAdministrator(cfd);
+		exit(1);
+	}
+	else if(pidc > 0)
+	{
+
+	}
+	
+}
 
 int main(int argc, char **argv)
 {
 	int sfd, cfd;
-	pid_t pidc;
 	char buf[1000];
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
@@ -55,32 +248,7 @@ int main(int argc, char **argv)
 			perror("Server: Accept failed");
 			exit(1);
 		}
-
-		if(recv(cfd, buf, 1000, 0) == -1)
-		{
-			printf("Didnt get what the client requested for\n");
-			exit(1);
-		}
-		printf("Client asked for %s\n", buf);
-
-
-		pidc = fork();
-		if(pidc < 0)
-		{
-			perror("Fork error");
-			exit(1);
-		}
-		else if(pidc==0)	// Child Process
-		{
-			if(send(cfd, "put the message you want to send here", 37, 0) == -1)
-				perror("Server write failed");
-			exit(1);
-		}
-		else				// Parent Process
-		{
-			continue;
-		}
-		
+		handleClient(cfd);
 	}
 
 	if(close(sfd)==-1)

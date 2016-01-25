@@ -8,9 +8,74 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+void pingServer(int sfd)
+{
+	char buf[1000] = {'\0'};
+	if(send(sfd, "Reader", 6, 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+
+	printf("Which category of news do you want?\n");
+	scanf("%s", buf);
+
+	if(send(sfd, buf, strlen(buf), 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+
+	printf("Folowing news are avaiabe -\n");
+
+	do
+	{
+		if (recv (sfd, buf, 1000, 0) == -1)
+    	{
+        	perror ("Client: Receive failed");
+        	exit (1);
+    	}
+    	printf("%s\n", buf);
+    	strcpy(buf, "\0");
+	}while(!strcmp(buf,"\0"));
+
+	printf("Which article do you want?\n");
+	scanf("%s", buf);
+	
+	if(send(sfd, buf, strlen(buf), 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+}
+
+void getArticle(int sfd)
+{
+	char rec_str[1000] = {'\0'};
+	if (recv(sfd, rec_str, 1000, 0) == -1)
+    {
+       	perror ("Client: Receive failed");
+        exit (1);
+    }
+    printf("\n%s\n", rec_str);
+    if (recv(sfd, rec_str, 1000, 0) == -1)
+    {
+       	perror ("Client: Receive failed");
+        exit (1);
+    }
+    printf("\nDated: %s\n", rec_str);
+    if (recv(sfd, rec_str, 1000, 0) == -1)
+    {
+       	perror ("Client: Receive failed");
+        exit (1);
+    }
+    printf("\n%s\n", rec_str);
+}
+
 int main(int argc, char **argv)
 {
 	int sfd, cfd;
+	char buf[1000] = {'\0'}; 
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&srv_addr, 0, addrlen);
@@ -38,22 +103,9 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	if(send(sfd, "Get me academic news", 20, 0) == -1)
-	{
-		perror("Server write failed");
-		exit(1);
-	}
-
-	char buf[1000] = {'\0'}; 
+	pingServer(sfd);
+	getArticle(sfd);
     
-    if (recv (sfd, buf, 1000, 0) == -1)
-    {
-        perror ("Client: Receive failed");
-        exit (1);
-    }
-    
-    printf ("Received message = |%s|\n", buf);
-
     if (close(sfd) == -1)
     {
         perror ("Client close failed");

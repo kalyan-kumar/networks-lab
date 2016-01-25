@@ -1,14 +1,22 @@
 #include "news_header.h"
 
-void article::readFromFile(string title, bool category)
+void article::readFromFile(char *title, bool category)
 {
 	ifstream myfile;
-	string path;
+	char path[100];
 	if(category)
-		path = "Data/Academic/" + title + ".txt";
+	{
+		strcpy(path, "Data/Academic/");
+		strcat(path, title);
+		strcat(path, ".txt");
+	}
 	else
-		path = "Data/Non-Academic/" + title + ".txt";
-	myfile.open(path.c_str());
+	{
+		strcpy(path, "Data/Non-Academic/");
+		strcat(path, title);
+		strcat(path, ".txt");
+	}
+	myfile.open(path);
 	if(myfile.is_open())
 	{
 		getline(myfile, this->heading);
@@ -45,13 +53,4 @@ void article::print()
 	cout << "Heading - " << this->heading << "\n";
 	cout << "Date - " << this->date << "\n";
 	cout << "Content - " << this->text << "\n";
-}
-
-int main()
-{
-	article a , b;
-	string input = "sample";
-	a.readFromFile(input, true);
-	a.print();
-	return 0;
 }

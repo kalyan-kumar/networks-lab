@@ -1,3 +1,6 @@
+#ifndef NEWS_H
+#define NEWS_H
+
 #include <string>
 #include <string.h>
 #include <iostream>
@@ -7,13 +10,15 @@ using namespace std;
 
 class article
 {
-private:
+public:
 	bool academic;
 	string heading;
 	string date;
 	string text;
 public:
-	void readFromFile(string title, bool category);
+	void readFromFile(char *title, bool category);
 	void writeToFile();
 	void print();
 };
+
+#endif

@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	printf("Socket fd=%d\n", sfd);
 
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21455);
+	srv_addr.sin_port   = htons(21435);
 
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{

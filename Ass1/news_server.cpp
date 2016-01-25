@@ -1,7 +1,10 @@
+#include <vector>
+#include <string>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <algorithm>
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -9,148 +12,200 @@
 #include "news_header.h"
 #include <dirent.h>
 
-void handleReader(int cfd)
+using namespace std;
+
+article academic[1000], nacademic[1000];
+
+bool dateCompare(article a, article b)
 {
-	int siz;
-	string path1;
-	char buf1[1000] = {'\0'}, buf2[1000] = {'\0'}, direct[1000], path[1000];
-	if(recv(cfd, buf1, 1000, 0) == -1)
+	int dd1, dd2, mm1, mm2, yy1, yy2;
+	sscanf(a.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	sscanf(b.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	if(yy1 > yy2)
+		return true;
+	else if(yy1 < yy2)
+		return false;
+	else if(yy1==yy2)
 	{
-		printf("Didnt get what the client requested for\n");
-		exit(1);
+		if(mm1 > mm2)
+            return true;
+        else if(mm1 < mm2)
+            return false;
+        else if(mm1 == mm2)
+        {
+        	if(dd1 >= dd2)
+                return true;
+            else
+                return false;
+        }
 	}
-	getcwd(direct, 1000);
+}
+
+int getfiles(char direct[1000], bool flag)
+{
+	int i;
+	char buf[1000] ;
 	DIR *d;
 	struct dirent *dp;
-	if(!strcmp(buf1, "Academic"))
+	article tmp;
+	d = opendir(direct);
+	strcpy(buf, "");
+	if(d)
 	{
-		strcat(direct, "/Data/Academic");
-		article tmp;
-		printf("%s\n", direct);
-		d = opendir(direct);
-		if(d)
+		for(i=0;(dp=readdir(d))!=NULL;i++)
 		{
-			while((dp=readdir(d))!=NULL)
-			{
-				tmp.readFromFile(dp->d_name, true);
-				siz = tmp.heading.size();
-				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
-				{
-					perror("Server write failed");
-					exit(1);
-				}
-			}
+			if(strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0)
+				continue;
+			if(flag)
+				academic[i].readFromFile(dp->d_name, true);
+			else
+				nacademic[i].readFromFile(dp->d_name, false);
 		}
-		else
-			perror("Cant open directory");
-		closedir(d);
 	}
 	else
+		perror("Cant open directory");
+	closedir(d);
+	return i;
+}
+
+void handleReader(int cfd)
+{
+	int siz, siz1, i;
+	string path1;
+	article tmp;
+	char buf1[1000] = {'\0'}, buf2[1000] = {'\0'}, direct[1000] = {'\0'}, path[1000] = {'\0'}, paths[1000] = {'\0'}, paths1[1000] = {'\0'};
+	getcwd(direct, 1000);
+	strcpy(path, direct);
+	strcat(path, "/Data/Academic");
+	siz = getfiles(path, true);
+	strcpy(path, direct);
+	strcat(path, "/Data/Non-Academic");
+	siz1 = getfiles(path, false);
+	// printf("asdfsdf\n");
+	// sort(academic, academic+siz, dateCompare);
+	// printf("asdfsdf\n");
+	// sort(nacademic, nacademic+siz1, dateCompare);
+	// printf("asdfsdf\n");
+	for(i=1;i<=siz;i++)
 	{
-		strcat(direct, "/Data/Non-Academic");
-		article tmp;
-		d = opendir(direct);
-		if(d)
-		{
-			while((dp=readdir(d))!=NULL)
-			{
-				tmp.readFromFile(dp->d_name, false);
-				tmp.print();
-				siz = tmp.heading.size();
-				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
-				{
-					perror("Server write failed");
-					exit(1);
-				}
-			}
-		}
-		else
-			perror("Cant open directory");
-		closedir(d);
+		strcat(buf1, to_string(i).c_str());
+		strcat(buf1, " ");
+		strcat(buf1, academic[i-1].heading.c_str());
+		strcat(buf1, "\n");
 	}
-	if(recv(cfd, buf2, 1000, 0) == -1)
+	for(i=1;i<=siz1;i++)
+	{
+		strcat(buf2, to_string(i).c_str());
+		strcat(buf2, " ");
+		strcat(buf2, nacademic[i-1].heading.c_str());
+		strcat(buf2, "\n");
+	}
+	if(send(cfd, "Welcome to the database!", 24, 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+	
+	if(recv(cfd, paths, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-	if(!strcmp(buf1, "Academic"))
+	if(!strcmp(paths, "Academic"))
 	{
-		strcat(direct, "/Data/Academic");
-		article tmp;
-		d = opendir(direct);
-		if(d)
+		if(send(cfd, buf1, strlen(buf1), 0) == -1)
 		{
-			while((dp=readdir(d))!=NULL)
-			{
-				tmp.readFromFile(dp->d_name, true);
-				if(!strcmp(tmp.heading.c_str(), buf2))
-				{
-					siz = tmp.heading.size();
-					if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					siz = tmp.date.size();
-					if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					siz = tmp.text.size();
-					if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					break;
-				}
-			}
+			perror("Server write failed");
+			exit(1);
 		}
-		else
-			perror("Cant open directory");
-		closedir(d);
 	}
 	else
 	{
-		strcat(direct, "/Data/Non-Academic");
-		article tmp;
-		d = opendir(direct);
-		if(d)
+		if(send(cfd, buf2, strlen(buf2), 0) == -1)
 		{
-			strcpy(path, direct);
-			while((dp=readdir(d))!=NULL)
-			{
-				tmp.readFromFile(dp->d_name, false);
-				if(!strcmp(tmp.heading.c_str(), buf2))
-				{
-					siz = tmp.heading.size();
-					if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					siz = tmp.date.size();
-					if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					siz = tmp.text.size();
-					if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
-					{
-						perror("Server write failed");
-						exit(1);
-					}
-					break;
-				}
-			}
+			perror("Server write failed");
+			exit(1);
 		}
-		else
-			perror("Cant open directory");
-		closedir(d);
 	}
-
+	if(recv(cfd, paths1, 1000, 0) == -1)
+	{
+		printf("Didnt get what the client requested for\n");
+		exit(1);
+	}
+	if(!strcmp(paths, "Academic"))
+	{
+		tmp = academic[stoi(paths1)];
+		siz = tmp.heading.size();
+		if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		siz = tmp.date.size();
+		if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		siz = tmp.text.size();
+		if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+	}
+	else
+	{
+		tmp = nacademic[stoi(paths1)];
+		siz = tmp.heading.size();
+		if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		siz = tmp.date.size();
+		if(send(cfd, tmp.date.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		siz = tmp.text.size();
+		if(send(cfd, tmp.text.c_str(), siz, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if(recv(cfd, paths1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+	}
 }
 
 void handleReporter(int cfd)
@@ -216,6 +271,9 @@ void handleReporter(int cfd)
 
 void handleAdministrator(int cfd)
 {
+	struct sockaddr_in cl_addr;
+    socklen_t addrlen = sizeof (struct sockaddr_in);
+    memset (&cl_addr, 0, addrlen);
 
 }
 
@@ -239,10 +297,9 @@ void handleClient(int cfd)
 	{
 		if(!strcmp(buf, "Reader"))
 			handleReader(cfd);
-		else if(!strcmp(buf, "Reporter"))
+		else
 			handleReporter(cfd);
-		else if(!strcmp(buf, "Administrator"))
-			handleAdministrator(cfd);
+		printf("Successfully finished a request\n");
 		exit(1);
 	}
 	else if(pidc > 0)
@@ -254,60 +311,100 @@ void handleClient(int cfd)
 
 int main(int argc, char **argv)
 {
-	int sfd, cfd;
-	char buf[1000];
-	struct sockaddr_in srv_addr, cli_addr;
-	socklen_t addrlen = sizeof(struct sockaddr_in);
-	memset(&srv_addr, 0, addrlen);
-	memset(&cli_addr, 0, addrlen);
-
-	sfd = socket(AF_INET, SOCK_STREAM, 0);
-
-	if(sfd==-1)
+	pid_t pida;
+	pida = fork();
+	if(pida < 0)
 	{
-		perror("Server: socket error");
+		perror("Fork error");
 		exit(1);
 	}
-	printf("Socket fd = %d\n", sfd);
-	
-	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21455);
-	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
+	else if (pida == 0)
 	{
-		perror("Network address conversion.\n");
-		exit(1);
-	}
+		int sfd;
+		struct sockaddr_in srv_addr;
+    	socklen_t addrlen = sizeof (struct sockaddr_in);
+    	memset (&srv_addr, 0, addrlen);
+    	sfd = socket (AF_INET, SOCK_DGRAM, 0); 
+	    if (sfd == -1) 
+	    {
+	        perror ("Server_1.c socket error");
+	        exit (1);
+	    }
+	    printf ("Socket fd = %d\n", sfd);
+	    srv_addr.sin_family = AF_INET;
+    	srv_addr.sin_port   = htons (23465);
+	    if (inet_pton (AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
+	    {
+	        perror ("Server Presentation to network address conversion.\n");
+	        exit (1);
+	    }
+	    if (bind (sfd, (struct sockaddr *) &srv_addr, addrlen) < 0)
+	    {
+	        perror ("Server: bind failed");
+	        exit (1);
+	    }
+	    while(1)
+	    {
+	    	handleAdministrator(sfd);
+	    }
 
-	if(bind(sfd, (struct sockaddr *) &srv_addr, addrlen) == -1)
-	{
-		perror("Server: Bind failed");
-		exit(1);
 	}
-
-	printf("Max connections allowed to wait: %d\n", 15); // Hard-coded 15 here 
-	if(listen(sfd, 15) == -1)
+	else
 	{
-		perror("Server: Listen failed");
-		exit(1);
-	}
+		int sfd, cfd;
+		char buf[1000];
+		struct sockaddr_in srv_addr, cli_addr;
+		socklen_t addrlen = sizeof(struct sockaddr_in);
+		memset(&srv_addr, 0, addrlen);
+		memset(&cli_addr, 0, addrlen);
 
-	while(1)
-	{
-		cfd = accept(sfd, (struct sockaddr *) &cli_addr, &addrlen);
-		if(cfd==-1)
+		sfd = socket(AF_INET, SOCK_STREAM, 0);
+
+		if(sfd==-1)
 		{
-			perror("Server: Accept failed");
+			perror("Server: socket error");
 			exit(1);
 		}
-		handleClient(cfd);
-	}
+		printf("Socket fd = %d\n", sfd);
+		
+		srv_addr.sin_family = AF_INET;
+		srv_addr.sin_port   = htons(21435);
+		if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
+		{
+			perror("Network address conversion.\n");
+			exit(1);
+		}
 
-	if(close(sfd)==-1)
-	{
-		perror("Server close failed");
-		exit(1);
-	}
-	printf("THE END\n");
+		if(bind(sfd, (struct sockaddr *) &srv_addr, addrlen) == -1)
+		{
+			perror("Server: Bind failed");
+			exit(1);
+		}
 
+		printf("Max connections allowed to wait: %d\n", 15); // Hard-coded 15 here 
+		if(listen(sfd, 15) == -1)
+		{
+			perror("Server: Listen failed");
+			exit(1);
+		}
+
+		while(1)
+		{
+			cfd = accept(sfd, (struct sockaddr *) &cli_addr, &addrlen);
+			if(cfd==-1)
+			{
+				perror("Server: Accept failed");
+				exit(1);
+			}
+			handleClient(cfd);
+		}
+
+		if(close(sfd)==-1)
+		{
+			perror("Server close failed");
+			exit(1);
+		}
+		printf("THE END\n");
+	}
 	return 0;
 }

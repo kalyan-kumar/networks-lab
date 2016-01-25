@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 using std::string; 
 using namespace std;    // (or using namespace std if you want to use more of std.)  
-
+int sfd, cfd;
 void sendNews(string title){
 	ifstream myfile;
 	string path;
@@ -21,20 +21,20 @@ void sendNews(string title){
 	if(myfile.is_open())
 	{
 		getline(myfile, heading);
-		if(send(sfd, heading, 20, 0) == -1)
+		if(send(sfd, heading.c_str(), 20, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
 		
 		getline(myfile, date);
-		if(send(sfd, date, 20, 0) == -1)
+		if(send(sfd, date.c_str(), 20, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
 		getline(myfile, text);
-		if(send(sfd, "Get me academic news", 20, 0) == -1)
+		if(send(sfd, text.c_str(), 20, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
@@ -47,7 +47,7 @@ void sendNews(string title){
 
 int main(int argc, char **argv)
 {
-	int sfd, cfd;
+	
 	
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
@@ -78,6 +78,11 @@ int main(int argc, char **argv)
 		perror("Client: Connect failed.");
 		exit(1);
 	}
+	if(send(sfd,"Reporter", 20, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
 	cout<<"Enter the filename"<<endl;
 	string title;
 	cin>>title;

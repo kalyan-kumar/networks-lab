@@ -122,13 +122,13 @@ int main(int argc, char **argv)
 
 	char buf[1000] = {'\0'}; 
     
-    if (recv (sfd, buf, 1000, 0) == -1)
-    {
-        perror ("Client: Receive failed");
-        exit (1);
-    }
+    // if (recv (sfd, buf, 1000, 0) == -1)
+    // {
+    //     perror ("Client: Receive failed");
+    //     exit (1);
+    // }
     
-    printf ("Received message = |%s|\n", buf);
+    // printf ("Received message = |%s|\n", buf);
 
     if (close(sfd) == -1)
     {

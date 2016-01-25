@@ -52,3 +52,5 @@ void article::print()
 	cout << "Date - " << this->date << "\n";
 	cout << "Content - " << this->text << "\n";
 }
+
+

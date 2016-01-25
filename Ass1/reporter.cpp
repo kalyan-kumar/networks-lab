@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 	printf("Socket fd=%d\n", sfd);
 
 	srv_addr.sin_family = AF_INET;
-	srv_addr.sin_port   = htons(21455);
+	srv_addr.sin_port   = htons(21435);
 
 	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 	{
@@ -122,13 +122,13 @@ int main(int argc, char **argv)
 
 	char buf[1000] = {'\0'}; 
     
-    if (recv (sfd, buf, 1000, 0) == -1)
-    {
-        perror ("Client: Receive failed");
-        exit (1);
-    }
+    // if (recv (sfd, buf, 1000, 0) == -1)
+    // {
+    //     perror ("Client: Receive failed");
+    //     exit (1);
+    // }
     
-    printf ("Received message = |%s|\n", buf);
+    // printf ("Received message = |%s|\n", buf);
 
     if (close(sfd) == -1)
     {

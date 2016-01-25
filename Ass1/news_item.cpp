@@ -8,13 +8,11 @@ void article::readFromFile(char *title, bool category)
 	{
 		strcpy(path, "Data/Academic/");
 		strcat(path, title);
-		strcat(path, ".txt");
 	}
 	else
 	{
 		strcpy(path, "Data/Non-Academic/");
 		strcat(path, title);
-		strcat(path, ".txt");
 	}
 	myfile.open(path);
 	if(myfile.is_open())

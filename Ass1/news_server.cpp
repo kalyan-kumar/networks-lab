@@ -24,16 +24,15 @@ void handleReader(int cfd)
 	struct dirent *dp;
 	if(!strcmp(buf1, "Academic"))
 	{
-		strcat(direct, "/Academic/");
+		strcat(direct, "/Data/Academic");
 		article tmp;
+		printf("%s\n", direct);
 		d = opendir(direct);
 		if(d)
 		{
-			strcpy(path, direct);
 			while((dp=readdir(d))!=NULL)
 			{
-				strcat(path, dp->d_name);
-				tmp.readFromFile(path, true);
+				tmp.readFromFile(dp->d_name, true);
 				siz = tmp.heading.size();
 				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
 				{
@@ -48,16 +47,14 @@ void handleReader(int cfd)
 	}
 	else
 	{
-		strcat(direct, "/Non-Academic/");
+		strcat(direct, "/Data/Non-Academic");
 		article tmp;
 		d = opendir(direct);
 		if(d)
 		{
-			strcpy(path, direct);
 			while((dp=readdir(d))!=NULL)
 			{
-				strcat(path, dp->d_name);
-				tmp.readFromFile(path, false);
+				tmp.readFromFile(dp->d_name, false);
 				tmp.print();
 				siz = tmp.heading.size();
 				if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
@@ -78,16 +75,14 @@ void handleReader(int cfd)
 	}
 	if(!strcmp(buf1, "Academic"))
 	{
-		strcat(direct, "/Academic/");
+		strcat(direct, "/Data/Academic");
 		article tmp;
 		d = opendir(direct);
 		if(d)
 		{
-			strcpy(path, direct);
 			while((dp=readdir(d))!=NULL)
 			{
-				strcat(path, dp->d_name);
-				tmp.readFromFile(path, true);
+				tmp.readFromFile(dp->d_name, true);
 				if(!strcmp(tmp.heading.c_str(), buf2))
 				{
 					siz = tmp.heading.size();
@@ -118,7 +113,7 @@ void handleReader(int cfd)
 	}
 	else
 	{
-		strcat(direct, "/Non-Academic/");
+		strcat(direct, "/Data/Non-Academic");
 		article tmp;
 		d = opendir(direct);
 		if(d)
@@ -126,8 +121,7 @@ void handleReader(int cfd)
 			strcpy(path, direct);
 			while((dp=readdir(d))!=NULL)
 			{
-				strcat(path, dp->d_name);
-				tmp.readFromFile(path, false);
+				tmp.readFromFile(dp->d_name, false);
 				if(!strcmp(tmp.heading.c_str(), buf2))
 				{
 					siz = tmp.heading.size();

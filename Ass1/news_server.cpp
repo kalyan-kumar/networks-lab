@@ -20,7 +20,11 @@ bool dateComp(article a, article b)
 {
 	int dd1, dd2, mm1, mm2, yy1, yy2;
 	sscanf(a.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	printf("%d/%d/%d\n", &dd1, &mm1, &yy1 );
 	sscanf(b.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	printf("%d/%d/%d\n", &dd1, &mm1, &yy1 );
+
+
 	if(yy1 > yy2)
 		return true;
 	else if(yy1 < yy2)
@@ -290,9 +294,10 @@ void handleReporter(int cfd)
 	else
 		path4 = "Data/Non-Academic/" + temp.file;
 	printf("Succesfully added news\n");
-	if(!fork())
+	int pid=fork();
+	if(pid==0)
 	{	
-		int sen=execlp("xterm","xterm","-e","more",path4.c_str(),(const char*)NULL);
+		int sen=execlp("xterm", "xterm", "-hold", "-e", "more",path4.c_str(),(const char*)NULL);
 		if(sen==-1)
 			perror("exec error");
 	}	

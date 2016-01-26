@@ -20,11 +20,7 @@ bool dateComp(article a, article b)
 {
 	int dd1, dd2, mm1, mm2, yy1, yy2;
 	sscanf(a.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
-	printf("%d/%d/%d\n", &dd1, &mm1, &yy1 );
-	sscanf(b.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
-	printf("%d/%d/%d\n", &dd1, &mm1, &yy1 );
-
-
+	sscanf(b.date.c_str(), "%d/%d/%d", &dd2, &mm2, &yy2);
 	if(yy1 > yy2)
 		return true;
 	else if(yy1 < yy2)
@@ -72,12 +68,12 @@ int getfiles(char direct[1000], bool flag)
 				academic.push_back(temp);
 			}
 			else
-				{
-					article temp;
-					temp.file=dp->d_name;
-					temp.readFromFile(dp->d_name, false);
-					nacademic.push_back(temp);
-				}
+			{
+				article temp;
+				temp.file=dp->d_name;
+				temp.readFromFile(dp->d_name, false);
+				nacademic.push_back(temp);
+			}
 		}
 	}
 	else
@@ -100,12 +96,9 @@ void handleReader(int cfd)
 	strcat(path, "/Data/Non-Academic");
 	siz1 = getfiles(path, false);
 
-	// printf("asdfsdf\n");
-	// printf("%d\n",academic.size() );
-	// sort(academic.begin(), academic.end(),academic[0].dateCompare;
-	// printf("asdfsdf\n");
-	// sort(nacademic.begin(), nacademic.end(),nacademic[0].dateCompare());
-	// printf("asdfsdf\n");
+	sort(academic.begin(), academic.end(), dateComp);
+	sort(nacademic.begin(), nacademic.end(), dateComp);
+	
 	for(i=1;i<=siz;i++)
 	{
 		strcat(buf1, to_string(i).c_str());
@@ -226,6 +219,8 @@ void handleReader(int cfd)
 			exit(1);
 		}
 	}
+	academic.clear();
+	nacademic.clear();
 }
 
 void handleReporter(int cfd)

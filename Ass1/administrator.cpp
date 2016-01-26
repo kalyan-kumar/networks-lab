@@ -34,13 +34,13 @@ int main ()
     dest_addr.sin_family = AF_INET;
     dest_addr.sin_port   = htons (port_num);
     
-    if (inet_pton (AF_INET, "127.0.0.1", &dest_addr.sin_addr); <= 0)
+    if (inet_pton (AF_INET, "127.0.0.1", &dest_addr.sin_addr) <= 0)
     {
         perror ("Client Presentation to network address conversion.\n");
         exit (1);
     }
 
-    rst = sendto (sfd, "Administrator", 13, flags, (struct sockaddr *) &dest_addr, sizeof (struct sockaddr_in));
+    rst = sendto (sfd, "Administrator", 13, 0, (struct sockaddr *) &dest_addr, sizeof (struct sockaddr_in));
     if (rst < 0)
     {
         perror ("Client: Sendto function call failed");
@@ -49,67 +49,76 @@ int main ()
     else
         printf ("Sent data size = %d\n", rst);
 
-    cout << "Enter Password" << endl;
-    cin >> message;
-    int message_length=message.length();
-    
-    rst = sendto (sfd, message.c_str(), message_length, flags, (struct sockaddr *) &dest_addr, sizeof (struct sockaddr_in));
-    if (rst < 0)
-    {
-        perror ("Client: Sendto function call failed");
-        exit (1);
-    }
-    else
-        printf ("Sent data size = %d\n", rst);
-
-    rst = recvfrom (sfd, buf, BUF_SIZE, flags, (struct sockaddr *) &sender_addr, &sender_len);
+   
+    rst = recvfrom (sfd, buf, BUF_SIZE, 0, (struct sockaddr *) &sender_addr, &sender_len);
     if (rst < 0)
     {
         perror ("Client: couldn't receive");
         exit (1);
     }
-    if(strcmp(buf,"yes")==0)
+    while(1)
     {
-        while(1)
-        {
-            cout<<"delete one file(Enter 1) or delete time based( Enter 2)?"<<endl;
-            int i;
-            cin>>i;
-            if(i==1)
-            {
-                cout<<"Enter the Title"<<endl;
-                string title;
-                cin>>title;
-                title="title"+title;
-                message_length=title.length();
-                 rst = sendto (sfd, title.c_str(), message_length, flags, (struct sockaddr *) &dest_addr, 
-                       sizeof (struct sockaddr_in));
-                 if (rst < 0)
-                {
-                    perror ("Client: couldn't receive");
-                    exit (1);
-                }
-                break;
+     cout << "Enter Password" << endl;
+    
+    cin >> message;
+    int message_length=message.length();
+    rst = sendto (sfd, message.c_str(), message_length, 0, (struct sockaddr *) &dest_addr, sizeof (struct sockaddr_in));
+    if (rst < 0)
+    {
+        perror ("Client: Sendto function call failed");
+        exit (1);
+    }
+    
 
-            }
-            if(i==2)
+
+    rst = recvfrom (sfd, buf, BUF_SIZE, 0, (struct sockaddr *) &sender_addr, &sender_len);
+    if (rst < 0)
+    {
+        perror ("Client: couldn't receive");
+        exit (1);
+    }
+    if(strcmp(buf,"Accepted")==0)
+    {
+        
+            // cout<<"delete one file(Enter 1) or delete time based( Enter 2)?"<<endl;
+            // int i;
+            // cin>>i;
+            // if(i==1)
+            // {
+            //     cout<<"Enter the Title"<<endl;
+            //     string title;
+            //     cin>>title;
+            //     title="title"+title;
+            //     message_length=title.length();
+            //      rst = sendto (sfd, title.c_str(), message_length, flags, (struct sockaddr *) &dest_addr, 
+            //            sizeof (struct sockaddr_in));
+            //      if (rst < 0)
+            //     {
+            //         perror ("Client: couldn't receive");
+            //         exit (1);
+            //     }
+            //     break;
+
+            // }
+            // if(i==2)
+            // {
+             cout<<"Enter the Date"<<endl;
+             string title;
+             cin>>title;
+             message_length=title.length();
+             rst = sendto (sfd, title.c_str(), message_length, flags, (struct sockaddr *) &dest_addr, 
+                   sizeof (struct sockaddr_in));
+             if (rst < 0)
             {
-                cout<<"Enter the Date and time"<<endl;
-                 string title;
-                 cin>>title;
-                 title="date"+title;
-                 message_length=title.length();
-                 rst = sendto (sfd, title.c_str(), message_length, flags, (struct sockaddr *) &dest_addr, 
-                       sizeof (struct sockaddr_in));
-                 if (rst < 0)
-                {
-                    perror ("Client: couldn't receive");
-                    exit (1);
-                }
-                break;
+                perror ("Client: couldn't receive");
+                exit (1);
             }
-        }
-    }       
+            break;
+     }       
+    }
+            // }
+        // }
+           
 
     const char *buf2 = inet_ntop (AF_INET, (struct sockaddr *) &sender_addr, buf, BUF_SIZE);
     if (buf2 == NULL)

@@ -15,10 +15,12 @@ public:
 	string heading;
 	string date;
 	string text;
+	string file;
 public:
 	void readFromFile(char *title, bool category);
 	void writeToFile();
 	void print();
+	bool dateCompare(article a,article b);
 };
 
 #endif

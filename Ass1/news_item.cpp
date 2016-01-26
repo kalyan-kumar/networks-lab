@@ -31,9 +31,9 @@ void article::writeToFile()
 	ofstream myfile;
 	string path;
 	if(this->academic)
-		path = "Data/Academic/" + this->heading;
+		path = "Data/Academic/" + this->heading+".txt";
 	else
-		path = "Data/Non-Academic/" + this->heading;
+		path = "Data/Non-Academic/" + this->heading+".txt";
 	myfile.open(path.c_str());
 	if(myfile.is_open())
 	{
@@ -52,5 +52,28 @@ void article::print()
 	cout << "Date - " << this->date << "\n";
 	cout << "Content - " << this->text << "\n";
 }
-
+bool article::dateCompare(article a, article b)
+{
+	int dd1, dd2, mm1, mm2, yy1, yy2;
+	sscanf(a.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	sscanf(b.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
+	if(yy1 > yy2)
+		return true;
+	else if(yy1 < yy2)
+		return false;
+	else if(yy1==yy2)
+	{
+		if(mm1 > mm2)
+            return true;
+        else if(mm1 < mm2)
+            return false;
+        else if(mm1 == mm2)
+        {
+        	if(dd1 > dd2)
+                return true;
+            else
+                return false;
+        }
+	}
+}
 

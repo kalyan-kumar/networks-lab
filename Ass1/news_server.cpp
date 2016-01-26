@@ -12,11 +12,11 @@
 #include "news_header.h"
 #include <dirent.h>
 
+
 using namespace std;
 
-article academic[1000], nacademic[1000];
-
-bool dateCompare(article a, article b)
+vector <article> academic, nacademic;
+bool dateComp(article a, article b)
 {
 	int dd1, dd2, mm1, mm2, yy1, yy2;
 	sscanf(a.date.c_str(), "%d/%d/%d", &dd1, &mm1, &yy1);
@@ -33,13 +33,14 @@ bool dateCompare(article a, article b)
             return false;
         else if(mm1 == mm2)
         {
-        	if(dd1 >= dd2)
+        	if(dd1 > dd2)
                 return true;
             else
                 return false;
         }
 	}
 }
+
 
 int getfiles(char direct[1000], bool flag)
 {
@@ -57,9 +58,19 @@ int getfiles(char direct[1000], bool flag)
 			if(strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0)
 				continue;
 			if(flag)
-				academic[i].readFromFile(dp->d_name, true);
+			{
+				article temp;
+				temp.file=dp->d_name;
+				temp.readFromFile(dp->d_name, true);
+				academic.push_back(temp);
+			}
 			else
-				nacademic[i].readFromFile(dp->d_name, false);
+				{
+					article temp;
+					temp.file=dp->d_name;
+					temp.readFromFile(dp->d_name, false);
+					nacademic.push_back(temp);
+				}
 		}
 	}
 	else
@@ -81,10 +92,12 @@ void handleReader(int cfd)
 	strcpy(path, direct);
 	strcat(path, "/Data/Non-Academic");
 	siz1 = getfiles(path, false);
+
 	// printf("asdfsdf\n");
-	// sort(academic, academic+siz, dateCompare);
+	// printf("%d\n",academic.size() );
+	// sort(academic.begin(), academic.end(),academic[0].dateCompare;
 	// printf("asdfsdf\n");
-	// sort(nacademic, nacademic+siz1, dateCompare);
+	// sort(nacademic.begin(), nacademic.end(),nacademic[0].dateCompare());
 	// printf("asdfsdf\n");
 	for(i=1;i<=siz;i++)
 	{
@@ -217,7 +230,7 @@ void handleReporter(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-	printf("%s\n",buf1 );
+	// printf("%s\n",buf1 );
 	if(send(cfd,"done",20, 0) == -1)
 				{
 					perror("Server write failed");
@@ -235,9 +248,10 @@ void handleReporter(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-		printf("%s\n",buf1 );
+		// printf("%s\n",buf1 );
 
 	temp.heading=buf1;
+	temp.file=temp.heading+".txt";
 	if(send(cfd,"done",20, 0) == -1)
 				{
 					perror("Server write failed");
@@ -265,15 +279,127 @@ void handleReporter(int cfd)
 		
 
 	temp.text=buf1;
+	 
 	temp.writeToFile();
+	string path4;
+	if(temp.academic)
+		path4 = "Data/Academic/" + temp.file;
+	else
+		path4 = "Data/Non-Academic/" + temp.file;
 	printf("Succesfully added news\n");
+	if(!fork())
+	{	
+		int sen=execlp("xterm","xterm","-e","more",path4.c_str(),(const char*)NULL);
+		if(sen==-1)
+			perror("exec error");
+	}	
+	
 }
 
-void handleAdministrator(int cfd)
-{
+void handleAdministrator(int sfd)
+{	
+	int siz, siz1;
+	int BUF_SIZE=100;
+	char buf[1000] = {'\0'},direct[1000] = {'\0'}, path[1000] = {'\0'},buf2[1000]={'0'};
 	struct sockaddr_in cl_addr;
     socklen_t addrlen = sizeof (struct sockaddr_in);
     memset (&cl_addr, 0, addrlen);
+    getcwd(direct, 1000);
+	strcpy(path, direct);
+	strcat(path, "/Data/Academic");
+	siz = getfiles(path, true);
+	strcpy(path, direct);
+	strcat(path, "/Data/Non-Academic");
+	siz1 = getfiles(path, false);
+    int  b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, 
+                        (struct sockaddr *) &cl_addr, &addrlen);
+
+
+    if (b_recv == -1)
+    {
+        perror ("Server: recvfrom failed");
+        exit (1);
+    }
+    if(strcmp(buf,"Administrator"))
+    	{
+    		perror("Not Administrator");
+    		exit(1);
+    	}
+    int rst = sendto (sfd, "Done", sizeof (buf), 0, 
+                    (struct sockaddr *) &cl_addr, 
+                    sizeof (struct sockaddr_in));
+    if (rst < 0)
+    {
+        perror ("Server: Couldn't send");
+        exit (1);
+    }
+    b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, 
+                        (struct sockaddr *) &cl_addr, &addrlen);
+
+
+
+    if (b_recv == -1)
+    {
+        perror ("Server: recvfrom failed");
+        exit (1);
+    }
+    if(strcmp(buf,"password"))
+    {
+      rst = sendto (sfd, "Accepted", sizeof (buf), 0, 
+                    (struct sockaddr *) &cl_addr, 
+                    sizeof (struct sockaddr_in));
+	    if (rst < 0)
+	    {
+	        perror ("Server: Couldn't send");
+	        exit (1);
+	    }
+	   b_recv = recvfrom (sfd, buf2, BUF_SIZE, 0, 
+                        (struct sockaddr *) &cl_addr, &addrlen);
+   		
+    if (b_recv == -1)
+    {
+        perror ("Server: recvfrom failed");
+        exit (1);
+    }
+    printf("%s\n",buf2);
+    	article temp;
+    	temp.date=buf2;
+    	
+   		for(article temp2:academic)
+		{
+			if(dateComp(temp,temp2))
+			{
+				string files="./Data/Academic/";
+				cout<<files+temp2.file<<endl;
+				 if(remove((files+temp2.file).c_str())!=0)  
+   				 perror( "Error deleting file" );
+			}
+		}
+		for(article temp2:nacademic)
+		{
+			if(dateComp(temp,temp2))
+			{
+				 string files="./Data/Non-Academic/";
+				 if(remove((files+temp2.file).c_str())!=0) 
+   				 perror( "Error deleting file" );
+			}
+		}
+    	
+    }
+    else
+    {
+    	 if(strcmp(buf,"password"))
+    {
+    	 rst = sendto (sfd, "Try", sizeof (buf), 0, 
+                    (struct sockaddr *) &cl_addr, 
+                    sizeof (struct sockaddr_in));
+	    if (rst < 0)
+	    {
+	        perror ("Server: Couldn't send");
+	        exit (1);
+	    }	
+    }
+    }
 
 }
 
@@ -345,7 +471,7 @@ int main(int argc, char **argv)
 	    }
 	    while(1)
 	    {
-	    	handleAdministrator(sfd);
+	    	handleAdministrator(sfd);//sfd
 	    }
 
 	}

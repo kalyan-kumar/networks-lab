@@ -59,40 +59,46 @@ void pingServer(int sfd)
 
 void getArticle(int sfd)
 {
-	char rec_str[1000] = {'\0'};
-	if (recv(sfd, rec_str, 1000, 0) == -1)
-    {
-       	perror ("Client: Receive failed");
-        exit (1);
-    }
-    if(send(sfd, "Got it!", 7, 0) == -1)
+	if(!fork())
 	{
-		perror("Server write failed");
-		exit(1);
+		char rec_str_h[1000] = {'\0'}, rec_str_d[1000] = {'\0'}, rec_str_t[1000] = {'\0'}, buf[1000] = {'\0'};
+		if (recv(sfd, rec_str_h, 1000, 0) == -1)
+	    {
+	       	perror ("Client: Receive failed");
+	        exit (1);
+	    }
+	    if(send(sfd, "Got it!", 7, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+	    if (recv(sfd, rec_str_d, 1000, 0) == -1)
+	    {
+	       	perror ("Client: Receive failed");
+	        exit (1);
+	    }
+	    if(send(sfd, "Got it!", 7, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		if (recv(sfd, rec_str_t, 1000, 0) == -1)
+	    {
+	       	perror ("Client: Receive failed");
+	        exit (1);
+	    }
+	    if(send(sfd, "Got it!", 7, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		strcpy(buf, rec_str_h);
+		strcat(buf, "\n\nDated: ");
+		strcat(buf, rec_str_d);
+		strcat(buf, "\n\n");
+		strcat(buf, rec_str_t);
+	    int sen=execlp("xterm", "xterm", "-hold", "-e", "more",buf,(const char*)NULL);
 	}
-    printf("\n%s\n", rec_str);
-    if (recv(sfd, rec_str, 1000, 0) == -1)
-    {
-       	perror ("Client: Receive failed");
-        exit (1);
-    }
-    if(send(sfd, "Got it!", 7, 0) == -1)
-	{
-		perror("Server write failed");
-		exit(1);
-	}
-	printf("\nDated: %s\n", rec_str);
-    if (recv(sfd, rec_str, 1000, 0) == -1)
-    {
-       	perror ("Client: Receive failed");
-        exit (1);
-    }
-    if(send(sfd, "Got it!", 7, 0) == -1)
-	{
-		perror("Server write failed");
-		exit(1);
-	}
-    printf("\n%s\n", rec_str);
 }
 
 int main(int argc, char **argv)

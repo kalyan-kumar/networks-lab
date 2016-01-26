@@ -288,15 +288,12 @@ void handleReporter(int cfd)
 		path4 = "Data/Academic/" + temp.file;
 	else
 		path4 = "Data/Non-Academic/" + temp.file;
-	printf("Succesfully added news\n");
-	int pid=fork();
-	if(pid==0)
-	{	
-		int sen=execlp("xterm", "xterm", "-hold", "-e", "more",path4.c_str(),(const char*)NULL);
-		if(sen==-1)
-			perror("exec error");
-	}	
-	
+	if(send(cfd,path4.c_str(),path4.length(), 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+	printf("Succesfully added news\n");	
 }
 
 void handleAdministrator(int sfd)
@@ -314,33 +311,24 @@ void handleAdministrator(int sfd)
 	strcpy(path, direct);
 	strcat(path, "/Data/Non-Academic");
 	siz1 = getfiles(path, false);
-    int  b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, 
-                        (struct sockaddr *) &cl_addr, &addrlen);
-
-
+    int  b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, (struct sockaddr *) &cl_addr, &addrlen);
     if (b_recv == -1)
     {
         perror ("Server: recvfrom failed");
         exit (1);
     }
     if(strcmp(buf,"Administrator"))
-    	{
-    		perror("Not Administrator");
-    		exit(1);
-    	}
-    int rst = sendto (sfd, "Done", sizeof (buf), 0, 
-                    (struct sockaddr *) &cl_addr, 
-                    sizeof (struct sockaddr_in));
+	{
+		perror("Not Administrator");
+		exit(1);
+	}
+    int rst = sendto (sfd, "Done", sizeof (buf), 0, (struct sockaddr *) &cl_addr, sizeof (struct sockaddr_in));
     if (rst < 0)
     {
         perror ("Server: Couldn't send");
         exit (1);
     }
-    b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, 
-                        (struct sockaddr *) &cl_addr, &addrlen);
-
-
-
+    b_recv = recvfrom (sfd, buf, BUF_SIZE, 0, (struct sockaddr *) &cl_addr, &addrlen);
     if (b_recv == -1)
     {
         perror ("Server: recvfrom failed");
@@ -348,34 +336,29 @@ void handleAdministrator(int sfd)
     }
     if(strcmp(buf,"password"))
     {
-      rst = sendto (sfd, "Accepted", sizeof (buf), 0, 
-                    (struct sockaddr *) &cl_addr, 
-                    sizeof (struct sockaddr_in));
+      	rst = sendto (sfd, "Accepted", sizeof (buf), 0, (struct sockaddr *) &cl_addr, sizeof (struct sockaddr_in));
 	    if (rst < 0)
 	    {
 	        perror ("Server: Couldn't send");
 	        exit (1);
 	    }
-	   b_recv = recvfrom (sfd, buf2, BUF_SIZE, 0, 
-                        (struct sockaddr *) &cl_addr, &addrlen);
-   		
-    if (b_recv == -1)
-    {
-        perror ("Server: recvfrom failed");
-        exit (1);
-    }
-    printf("%s\n",buf2);
-    	article temp;
+	   	b_recv = recvfrom (sfd, buf2, BUF_SIZE, 0, (struct sockaddr *) &cl_addr, &addrlen);
+	    if (b_recv == -1)
+	    {
+	        perror ("Server: recvfrom failed");
+	        exit (1);
+	    }
+	    printf("%s\n",buf2);
+	    article temp;
     	temp.date=buf2;
-    	
    		for(article temp2:academic)
 		{
 			if(dateComp(temp,temp2))
 			{
 				string files="./Data/Academic/";
 				cout<<files+temp2.file<<endl;
-				 if(remove((files+temp2.file).c_str())!=0)  
-   				 perror( "Error deleting file" );
+				if(remove((files+temp2.file).c_str())!=0)  
+   				 	perror( "Error deleting file" );
 			}
 		}
 		for(article temp2:nacademic)
@@ -391,19 +374,17 @@ void handleAdministrator(int sfd)
     }
     else
     {
-    	 if(strcmp(buf,"password"))
-    {
-    	 rst = sendto (sfd, "Try", sizeof (buf), 0, 
-                    (struct sockaddr *) &cl_addr, 
-                    sizeof (struct sockaddr_in));
-	    if (rst < 0)
-	    {
-	        perror ("Server: Couldn't send");
-	        exit (1);
-	    }	
+    	if(strcmp(buf,"password"))
+    	{
+    	 	rst = sendto (sfd, "Try", sizeof (buf), 0, (struct sockaddr *) &cl_addr, sizeof (struct sockaddr_in));
+		    if (rst < 0)
+		    {
+		        perror ("Server: Couldn't send");
+		        exit (1);
+		    }	
+    	}
     }
-    }
-
+    cout << "Request Successfully completed!\n";
 }
 
 void handleClient(int cfd)
@@ -474,7 +455,7 @@ int main(int argc, char **argv)
 	    }
 	    while(1)
 	    {
-	    	handleAdministrator(sfd);//sfd
+	    	handleAdministrator(sfd);
 	    }
 
 	}

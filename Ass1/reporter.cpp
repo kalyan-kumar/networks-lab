@@ -124,14 +124,20 @@ int main(int argc, char **argv)
 	
 
 	char buf[1000] = {'\0'}; 
+
     
-    // if (recv (sfd, buf, 1000, 0) == -1)
-    // {
-    //     perror ("Client: Receive failed");
-    //     exit (1);
-    // }
-    
-    // printf ("Received message = |%s|\n", buf);
+    if (recv (sfd, buf, 1000, 0) == -1)
+    {
+        perror ("Client: Receive failed");
+        exit (1);
+    }
+    int pid=fork();
+	if(pid==0)
+	{	
+		int sen=execlp("xterm", "xterm", "-hold", "-e", "more",buf,(const char*)NULL);
+		if(sen==-1)
+			perror("exec error");
+	}
 
     if (close(sfd) == -1)
     {

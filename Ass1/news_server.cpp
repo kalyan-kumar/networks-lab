@@ -55,7 +55,10 @@ int getfiles(char direct[1000], bool flag)
 		for(i=0;(dp=readdir(d))!=NULL;i++)
 		{
 			if(strcmp(dp->d_name, ".")==0 || strcmp(dp->d_name, "..")==0)
+			{
+				i--;
 				continue;
+			}
 			if(flag)
 				academic[i].readFromFile(dp->d_name, true);
 			else
@@ -82,9 +85,9 @@ void handleReader(int cfd)
 	strcat(path, "/Data/Non-Academic");
 	siz1 = getfiles(path, false);
 	// printf("asdfsdf\n");
-	// sort(academic, academic+siz, dateCompare);
+	//sort(academic, academic+siz, dateCompare);
 	// printf("asdfsdf\n");
-	// sort(nacademic, nacademic+siz1, dateCompare);
+	//sort(nacademic, nacademic+siz1, dateCompare);
 	// printf("asdfsdf\n");
 	for(i=1;i<=siz;i++)
 	{
@@ -134,7 +137,7 @@ void handleReader(int cfd)
 	}
 	if(!strcmp(paths, "Academic"))
 	{
-		tmp = academic[stoi(paths1)];
+		tmp = academic[stoi(paths1)-1];
 		siz = tmp.heading.size();
 		if(send(cfd, tmp.heading.c_str(), siz, 0) == -1)
 		{

@@ -12,10 +12,13 @@
 using std::string; 
 using namespace std;    // (or using namespace std if you want to use more of std.)  
 int sfd, cfd;
-void sendNews(string title){
+void sendNews(string title,int isac){
 	ifstream myfile;
 	string path;
-	path = "Data/Academic/" + title + ".txt";
+	if(isac)
+		path = "Data/Academic/" + title + ".txt";
+	else
+		path = "Data/Non-Academic/" + title + ".txt";
 	myfile.open(path.c_str());
 	string heading,date,text;
 	if(myfile.is_open())
@@ -117,7 +120,7 @@ int main(int argc, char **argv)
 	        exit (1);
 	    }
 
-	sendNews(title);
+	sendNews(title,isac);
 	
 
 	char buf[1000] = {'\0'}; 

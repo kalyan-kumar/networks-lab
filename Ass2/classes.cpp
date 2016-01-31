@@ -1,6 +1,6 @@
 #include "classes.h"
 
-Train::Train(int ac, nonac, type, cabins)
+Train::Train(int ac, int nonac, int type, int cabins)
 {
 	num_ac_coach = ac;
 	num_nonac_coach = nonac;
@@ -27,6 +27,11 @@ Coach::Coach(int tier, int num_cabin)
 	int i;
 	total = tier*num_cabin;
 	reserved = 0;
+	num_LB = num_cabin*2;
+	num_MB = ((tier == 3) ? num_cabin*2 : 0);
+	num_UB = num_cabin*2;
+	num_SL = num_cabin;
+	num_SU = num_cabin;
 	seats.clear();
 	for(i=0;i<total;i++)
 		seats.push_back(Seat(i+1, tier));
@@ -40,22 +45,22 @@ Seat::Seat(int pos, int type)
 		switch(pos%6)
 		{
 			case 1:
-				b = 1;
+				b = LB;
 				break;
 			case 2:
-				b = 3;
+				b = UB;
 				break;
 			case 3:
-				b = 1;
+				b = LB;
 				break;
 			case 4:
-				b = 3;
+				b = UB;
 				break;
 			case 5:
-				b = 4;
+				b = SL;
 				break;
 			case 0:
-				b = 5;
+				b = SU;
 				break;
 		}
 	}
@@ -64,28 +69,28 @@ Seat::Seat(int pos, int type)
 		switch(pos%8)
 		{
 			case 1:
-				b = 1;
+				b = LB;
 				break;
 			case 2:
-				b = 2;
+				b = MB;
 				break;
 			case 3:
-				b = 3;
+				b = UB;
 				break;
 			case 4:
-				b = 1;
+				b = LB;
 				break;
 			case 5:
-				b = 2;
+				b = MB;
 				break;
 			case 6:
-				b = 3;
+				b = UB;
 				break;
 			case 7:
-				b = 4;
+				b = SL;
 				break;
 			case 0:
-				b = 5;
+				b = SU;
 				break;
 		}
 	}

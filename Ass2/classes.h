@@ -1,7 +1,12 @@
+#ifndef CLASSES_H
+#define CLASSES_H
+
 #include <string>
-#include <stdlio.h>
+#include <utility>
+#include <stdio.h>
 #include <stdlib.h>
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
@@ -16,20 +21,18 @@ enum BERTH_TYPE{
 
 class Seat
 {
-private:
+public:
 	bool booked;
 	BERTH_TYPE b;
-public:
 	Seat(int pos, int type);
 };
 
 class Coach
 {
-private:
-	int total, reserved;
-	std::vector<Seat> seats;
 public:
-	Coach();
+	int total, reserved, num_LB, num_MB, num_UB, num_SL, num_SU;
+	std::vector<Seat> seats;
+	Coach(int tier, int num_cabin);
 };
 
 class Train
@@ -38,16 +41,22 @@ public:
 	int num_ac_coach, num_nonac_coach, tier, num_cabin;
 	int ac_avail, nonac_avail, ac_reserved, nonac_reserved;
 	vector<Coach> ac_coaches, nonac_coaches;
-	Train(int ac, nonac, type, cabins);
+	Train(int ac, int nonac, int type, int cabins);
 };
 
 class Booking
 {
+public:
 	int route, berths, seniors;
 	bool coach;
-	vector<BERTH_TYPE> prefers;
+	vector<int> prefers;
 	vector<int> ages;
 };
 
+class Ticket
+{
+public:
+	vector<pair<int,int> > s1;
+};
 
-
+#endif

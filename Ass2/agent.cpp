@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <fstream>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,6 +11,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+using namespace std;
+
 int main()
 {
 	int sfd, cfd;
@@ -17,6 +20,8 @@ int main()
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&srv_addr, 0, addrlen);
+	FILE* infile = fopen("/home/kalyan/networks-lab/Ass2/Booking.csv", "r");;
+	FILE* otfile;
 
 	sfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sfd == -1)
@@ -40,10 +45,27 @@ int main()
 		perror("Client: Connect failed.");
 		exit(1);
 	}
-
-	if(send(sfd, "Reader", 6, 0) == -1)
+	
+	while(fgets(buf, 1000, infile))
 	{
-		perror("Server write failed");
-		exit(1);
+		if(buf[strlen(buf)-1] == '\n')
+			buf[strlen(buf)-1] = '\0';
+		printf("%s\n", buf);
+		if(send(sfd, buf, 1000, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		printf("Message sent\n");
+		memset(buf, '\0', 1000);
+		if(recv(sfd, buf, 1000, 0) == -1)
+	    {
+	       	perror ("Client: Receive failed");
+	       	exit (1);
+	    }
+	    printf("Message received\n");
+	    printf("%s\n", buf);
+	    sleep(2);
 	}
+    return 0;
 }

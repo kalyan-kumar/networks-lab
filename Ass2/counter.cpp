@@ -16,7 +16,10 @@
 #define CLIENT_LIMIT 15
 
 int master_socket, cfd[CLIENT_LIMIT], highsock;
+struct timeval tm;
 fd_set cur;
+Train rajdhani(13, 0, 2, 9);
+Train superfast(3, 12, 3, 9);
 
 void setnonblocking(int sock)
 {
@@ -37,15 +40,18 @@ void setnonblocking(int sock)
 void build_select_list()
 {
 	int i;
+	tm.tv_sec = 10;
+	tm.tv_usec = 0;
 	FD_ZERO(&cur);
 	FD_SET(master_socket, &cur);
+	highsock = master_socket;
 	for(i=0;i<CLIENT_LIMIT;i++)
 	{
 		if(cfd[i]!=0)
 		{
 			FD_SET(cfd[i], &cur);
 			if(cfd[i] > highsock)
-				cfd[i] = highsock;
+				highsock = cfd[i];
 		}
 	}
 }
@@ -445,8 +451,35 @@ void assignSeats(Booking x, Train y)
 	}
 }
 
+Booking parseBooking(char line[1000])
+{
+	char* tokens[100];
+    tokens[0] = (char*)malloc(100*sizeof(char));
+    tokens[0] = strtok(line, ",");
+    i==1;
+    while(tokens[i-1] != NULL)
+    {
+        tokens[i] = (char *)malloc(100*sizeof(char));
+        tokens[i] = strtok(NULL, " ");
+        i++;
+    }
+}
+
 void handleClient(int i)
 {
+	char buf[1000] = {'\0'};
+	if(recv(cfd[i], buf, 1000, 0) < -1)
+    {
+    	printf("Connection lost: FD=%d\n", cfd[i]);
+       	close(cfd[i]);
+       	cfd[i] = 0;
+    }
+    printf("%s\n", buf);
+    if(send(cfd[i], "Got the message", 15, 0) == -1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
 }
 
 void handle_new_connection()
@@ -460,7 +493,6 @@ void handle_new_connection()
 		perror("Server: Accept failed");
 		exit(1);
 	}
-	handleClient(tmp);
 	setnonblocking(tmp);
 	for(i=0;i<CLIENT_LIMIT;i++)
 	{
@@ -471,43 +503,34 @@ void handle_new_connection()
 			break;
 		}
 	}
+	printf("There are %d clients\n", i);
 	if(tmp!=-1)
 	{
-		printf("No room left for more clients");
+		printf("No room left for more clients\n");
 		close(tmp);
 	}
 }
 
-void deal_with_data(int x)
-{
-
-}
-
-void read_socks()
+void readSocks()
 {
 	int i;
 	if(FD_ISSET(master_socket, &cur))
-		handle_new_connection;
+		handle_new_connection();
 	for(i=0;i<CLIENT_LIMIT;i++)
 	{
 		if(FD_ISSET(cfd[i], &cur))
-			deal_with_data(i);
+			handleClient(i);
 	}
 }
 
 int main()
 {
-	Train rajdhani(13, 0, 2, 9);
-	Train superfast(3, 12, 3, 9);
 	int reuse_addr = 1, sel_res;
 	struct sockaddr_in srv_addr;
 	char buf[1000];
 	socklen_t addrlen = sizeof(struct sockaddr_in);
-	struct timeval tm;
 	memset(&srv_addr, 0, addrlen);
 	FD_ZERO(&cur);
-	tm.tv_sec = 10;
-	tm.tv_usec = 0;
 	memset((char *) &cfd, 0, sizeof(cfd));
 
 	master_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -517,9 +540,7 @@ int main()
 		exit(1);
 	}
 	printf("Socket FD = %d\n", master_socket);
-
 	setsockopt(master_socket, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,sizeof(reuse_addr));
-
 	setnonblocking(master_socket);	
 
 	srv_addr.sin_family = AF_INET;
@@ -543,10 +564,9 @@ int main()
 		exit(1);
 	}
 
-	FD_SET(master_socket, &cur);
-
 	while(1)
 	{
+		printf("New select\n");
 		build_select_list();
 		sel_res = select(highsock + 1, &cur, (fd_set *) 0, (fd_set *) 0, &tm);
 		if(sel_res < 0)
@@ -557,7 +577,8 @@ int main()
 		else if(sel_res == 0)
 			printf("No clients\n");
 		else
-			read_socks();
+			readSocks();
+		sleep(2);
 	}
 
 	if(close(master_socket)==-1)

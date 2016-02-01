@@ -1,3 +1,8 @@
+/*
+Kalyan Kumar	13CS10023
+Nitesh Sekhar	13CS10033
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,6 +18,7 @@
 #include <sstream>
 #include <string>
 #include <algorithm>
+#include <signal.h>
 
 #include "classes.h"
 
@@ -242,6 +248,7 @@ void readSocks()
 
 int main()
 {
+	pid_t pidc;
 	int reuse_addr = 1, sel_res;
 	struct sockaddr_in srv_addr;
 	char buf[1000];
@@ -283,18 +290,40 @@ int main()
 
 	while(1)
 	{
-		build_select_list();
-		sel_res = select(highsock + 1, &cur, (fd_set *) 0, (fd_set *) 0, &tm);
-		if(sel_res < 0)
+		pidc = fork();
+		if(pidc < 0)
 		{
-			perror("Select error");
+			perror("Fork error");
 			exit(1);
 		}
-		else if(sel_res == 0)
-			printf("No clients\n");
+		else if(pidc==0)
+		{
+			int status;
+			scanf("%d", &status);
+			if(status==1)
+			{
+				printf("\tTrain\t\tTotal[Booked/Available]\t\t\tTotal[Booked/Available]\n\t\t\t\t(AC)\t\t\t\t(Sleeper)\n");
+				printf("Superfast Express:\t\t%d[%d/%d]\t\t\t%d[%d/%d]\n", superfast.ac_avail+superfast.ac_reserved, superfast.ac_reserved, superfast.ac_avail, superfast.nonac_avail+superfast.nonac_reserved, superfast.nonac_reserved, superfast.nonac_avail);
+				printf("Rajdhani Express:\t\t%d[%d/%d]\t\t\t-\n", rajdhani.ac_avail+rajdhani.ac_reserved, rajdhani.ac_reserved, rajdhani.ac_avail);
+			}
+			exit(1);
+		}
 		else
-			readSocks();
-		sleep(2);
+		{
+			build_select_list();
+			sel_res = select(highsock + 1, &cur, (fd_set *) 0, (fd_set *) 0, &tm);
+			if(sel_res < 0)
+			{
+				perror("Select error");
+				exit(1);
+			}
+			else if(sel_res == 0)
+				printf("No clients\n");
+			else
+				readSocks();
+			kill(pidc, SIGKILL);
+			sleep(2);
+		}
 	}
 
 	if(close(master_socket)==-1)

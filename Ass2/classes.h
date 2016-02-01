@@ -19,6 +19,21 @@ enum BERTH_TYPE{
 	SU
 };
 
+class Booking
+{
+public:
+	int route, berths, seniors, cli_fd;
+	bool coach;
+	vector<int> prefers;
+	vector<int> ages;
+};
+
+class Ticket
+{
+public:
+	vector<pair<int,int> > s1;
+};
+
 class Seat
 {
 public:
@@ -42,21 +57,8 @@ public:
 	int ac_avail, nonac_avail, ac_reserved, nonac_reserved;
 	vector<Coach> ac_coaches, nonac_coaches;
 	Train(int ac, int nonac, int type, int cabins);
-};
-
-class Booking
-{
-public:
-	int route, berths, seniors;
-	bool coach;
-	vector<int> prefers;
-	vector<int> ages;
-};
-
-class Ticket
-{
-public:
-	vector<pair<int,int> > s1;
+	Ticket getSeats(bool flagger, Booking y);
+	Ticket assignSeats(Booking x);
 };
 
 #endif

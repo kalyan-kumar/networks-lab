@@ -10,8 +10,13 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <fcntl.h>
+#include <sstream>
+#include <string>
+#include <algorithm>
 
 #include "classes.h"
+
+using namespace std;
 
 #define CLIENT_LIMIT 15
 
@@ -56,430 +61,125 @@ void build_select_list()
 	}
 }
 
-Ticket getSeats(vector<Coach> x, Booking y)
+Booking parseBooking(int k)
 {
-	int num_coaches = x.size(), i, prob = -1, num_seats, j, here=0, tmp, t0, t1, t2, t3, t4, t5;
-	Ticket final;
-	for(i=0;i<num_coaches;i++)
-	{
-		if(((x[i].total)-(x[i].reserved)) >= y.berths)
-		{
-			tmp = 0;
-			t0 = y.prefers[0];
-			t1 = (y.prefers[1]-x[i].num_LB);
-			t2 = (y.prefers[2]-x[i].num_MB);
-			t3 = (y.prefers[3]-x[i].num_UB);
-			t4 = (y.prefers[4]-x[i].num_SL);
-			t5 = (y.prefers[5]-x[i].num_SU);
-			if(t1 <= 0)
-				tmp += y.prefers[1];
-			else
-				tmp += x[i].num_LB;
-			if(t2 <= 0)
-				tmp += y.prefers[2];
-			else
-				tmp += x[i].num_MB;
-			if(t3 <= 0)
-				tmp += y.prefers[3];
-			else
-				tmp += x[i].num_UB;
-			if(t4 <= 0)
-				tmp += y.prefers[4];
-			else
-				tmp += x[i].num_SL;
-			if(t5 <= 0)
-				tmp += y.prefers[5];
-			else
-				tmp += x[i].num_SU;
-			if(tmp >= here)
-			{
-				here = tmp;
-				prob = i;
-			}
-			if(t1<=0 && t2<=0 && t3<=0 && t4<=0 && t5<=0)
-			{
-				t0 = y.prefers[0];
-				t1 = y.prefers[1];
-				t2 = y.prefers[2];
-				t3 = y.prefers[3];
-				t4 = y.prefers[4];
-				t5 = y.prefers[5];
-				num_seats = x[i].seats.size();
-				for(j=0;j<num_seats;j++)
-				{
-					if(x[i].seats[j].booked)
-						continue;
-					switch (x[i].seats[j].b)
-					{
-						case LB:
-						{
-							if(t1 > 0)
-							{
-								final.s1.push_back(make_pair(i+1, j+1));
-								x[i].seats[j].booked = true;
-								x[i].reserved++;
-								x[i].num_LB--;
-								t1--;
-							}
-							break;
-						}
-						case MB:
-						{
-							if(t2 > 0)
-							{
-								final.s1.push_back(make_pair(i+1, j+1));
-								x[i].seats[j].booked = true;
-								x[i].reserved++;
-								x[i].num_MB--;
-								t2--;
-							}
-							break;
-						}
-						case UB:
-						{
-							if(t3 > 0)
-							{
-								final.s1.push_back(make_pair(i+1, j+1));
-								x[i].seats[j].booked = true;
-								x[i].reserved++;
-								x[i].num_UB--;
-								t3--;
-							}
-							break;
-						}
-						case SL:
-						{
-							if(t4 > 0)
-							{
-								final.s1.push_back(make_pair(i+1, j+1));
-								x[i].seats[j].booked = true;
-								x[i].reserved++;
-								x[i].num_SL--;
-								t4--;
-							}
-							break;
-						}
-						case SU:
-						{
-							if(t5 > 0)
-							{
-								final.s1.push_back(make_pair(i+1, j+1));
-								x[i].seats[j].booked = true;
-								x[i].reserved++;
-								x[i].num_SU--;
-								t5--;
-							}
-							break;
-						}
-					}
-				}
-				for(j=0;j<num_seats && t0>0;j++)
-				{
-					if(x[i].seats[j].booked)
-						continue;
-					final.s1.push_back(make_pair(i+1, j+1));
-					x[i].seats[j].booked = true;
-					x[i].reserved++;
-					switch (x[i].seats[j].b)
-					{
-						case LB:
-							x[i].num_LB--;
-							break;
-						case MB:
-							x[i].num_MB--;
-							break;
-						case UB:
-							x[i].num_UB--;
-							break;
-						case SL:
-							x[i].num_SL--;
-							break;
-						case SU:
-							x[i].num_SU--;
-							break;
-					}
-					t0--;
-				}
-				return final;
-			}
-		}
-	}
-	if(prob!=-1)
-	{
-		i = prob;
-		num_seats = x[i].seats.size();
-		t0 = y.prefers[0];
-		t1 = y.prefers[1];
-		t2 = y.prefers[2];
-		t3 = y.prefers[3];
-		t4 = y.prefers[4];
-		t5 = y.prefers[5];		
-		for(j=0;j<num_seats;j++)
-		{
-			if(x[i].seats[j].booked)
-				continue;
-			switch (x[i].seats[j].b)
-			{
-				case LB:
-				{
-					if(t1 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_LB--;
-						t1--;
-					}
-					break;
-				}
-				case MB:
-				{
-					if(t2 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_MB--;
-						t2--;
-					}
-					break;
-				}
-				case UB:
-				{
-					if(t3 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_UB--;
-						t3--;
-					}
-					break;
-				}
-				case SL:
-				{
-					if(t4 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_SL--;
-						t4--;
-					}
-					break;
-				}
-				case SU:
-				{
-					if(t5 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_SU--;
-						t5--;
-					}
-					break;
-				}
-			}
-		}
-		tmp = t0+t1+t2+t3+t4+t5;
-		for(j=0;j<num_seats && tmp>0;j++)
-		{
-			if(x[i].seats[j].booked)
-				continue;
-			final.s1.push_back(make_pair(i+1, j+1));
-			x[i].seats[j].booked = true;
-			x[i].reserved++;
-			switch (x[i].seats[j].b)
-			{
-				case LB:
-					x[i].num_LB--;
-					break;
-				case MB:
-					x[i].num_MB--;
-					break;
-				case UB:
-					x[i].num_UB--;
-					break;
-				case SL:
-					x[i].num_SL--;
-					break;
-				case SU:
-					x[i].num_SU--;
-					break;
-			}
-			tmp--;
-		}
-		return final;
-	}
-	t0 = y.prefers[0];
-	t1 = y.prefers[1];
-	t2 = y.prefers[2];
-	t3 = y.prefers[3];
-	t4 = y.prefers[4];
-	t5 = y.prefers[5];
-	for(i=0;i<num_coaches;i++)
-	{
-		if(x[i].reserved==x[i].total)
-			continue;
-		num_seats = x[i].seats.size();
-		for(j=0;j<num_seats;j++)
-		{
-			if(x[i].seats[j].booked)
-				continue;
-			switch (x[i].seats[j].b)
-			{
-				case LB:
-				{
-					if(t1 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_LB--;
-						t1--;
-					}
-					break;
-				}
-				case MB:
-				{
-					if(t2 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_MB--;
-						t2--;
-					}
-					break;
-				}
-				case UB:
-				{
-					if(t3 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_UB--;
-						t3--;
-					}
-					break;
-				}
-				case SL:
-				{
-					if(t4 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_SL--;
-						t4--;
-					}
-					break;
-				}
-				case SU:
-				{
-					if(t5 > 0)
-					{
-						final.s1.push_back(make_pair(i+1, j+1));
-						x[i].seats[j].booked = true;
-						x[i].reserved++;
-						x[i].num_SU--;
-						t5--;
-					}
-					break;
-				}
-			}
-		}
-	}
-	tmp = t0+t1+t2+t3+t4+t5;
-	for(i=0;i<num_coaches && tmp>0;i++)
-	{
-		if(x[i].reserved==x[i].total)
-			continue;
-		num_seats = x[i].seats.size();
-		for(j=0;j<num_seats && tmp>0;j++)
-		{
-			if(x[i].seats[j].booked)
-				continue;
-			final.s1.push_back(make_pair(i+1, j+1));
-			x[i].seats[j].booked = true;
-			x[i].reserved++;
-			switch (x[i].seats[j].b)
-			{
-				case LB:
-					x[i].num_LB--;
-					break;
-				case MB:
-					x[i].num_MB--;
-					break;
-				case UB:
-					x[i].num_UB--;
-					break;
-				case SL:
-					x[i].num_SL--;
-					break;
-				case SU:
-					x[i].num_SU--;
-					break;
-			}
-			tmp--;
-		}
-	}
-	return final;
-}
-
-void assignSeats(Booking x, Train y)
-{
-	if(x.coach)
-	{
-		if(y.ac_avail < x.berths)
-		{
-			printf("Not available\n");
-			return ;
-		}
-		getSeats(y.ac_coaches, x);
-	}
-	else
-	{
-		if(y.nonac_avail < x.berths)
-		{
-			printf("Not available\n");
-			return ;
-		}
-		getSeats(y.nonac_coaches, x);
-	}
-}
-
-Booking parseBooking(char line[1000])
-{
-	char* tokens[100];
+	char line[1000] = {'\0'};
+	Booking cur;
+	if(recv(cfd[k], line, 1000, 0) == 0)
+    {
+    	printf("Connection lost: FD=%d\n", cfd[k]);
+       	close(cfd[k]);
+       	cfd[k] = 0;
+       	cur.berths = -1;
+       	return cur;
+    }
+    printf("%s\n", line);
+	int i, j, tmp;
+	char *tokens[100], *tmps[100];
+	cur.cli_fd = cfd[k];
+	for(i=0;i<10;i++)
+		cur.prefers.push_back(0);
+	stringstream ss;
     tokens[0] = (char*)malloc(100*sizeof(char));
     tokens[0] = strtok(line, ",");
-    i==1;
+    i=1;
     while(tokens[i-1] != NULL)
     {
         tokens[i] = (char *)malloc(100*sizeof(char));
-        tokens[i] = strtok(NULL, " ");
+        tokens[i] = strtok(NULL, ",");
         i++;
     }
+    ss << tokens[1];
+    ss >> cur.route;
+    ss.str(string());
+    ss.clear();
+    if(!strcmp(tokens[2], "Sleeper"))
+    	cur.coach = false;
+    else
+    	cur.coach = true;
+    ss << tokens[3];
+    ss >> cur.berths;
+    ss.str(string());
+    ss.clear();
+    tmps[0] = (char*)malloc(100*sizeof(char));
+    tmps[0] = strtok(tokens[4], "-");
+    i=1;
+    while(tmps[i-1] != NULL)
+    {
+        tmps[i] = (char *)malloc(100*sizeof(char));
+        tmps[i] = strtok(NULL, "-");
+        i++;
+    }
+    for(j=0;j<i-1;j++)
+    {
+    	if(strstr(tmps[j], "NA"))
+    		cur.prefers[0]++;
+    	else if(strstr(tmps[j], "LB"))
+    		cur.prefers[1]++;
+    	else if(strstr(tmps[j], "MB"))
+    		cur.prefers[2]++;
+    	else if(strstr(tmps[j], "UB"))
+    		cur.prefers[3]++;
+    	else if(strstr(tmps[j], "SL"))
+    		cur.prefers[4]++;
+    	else if(strstr(tmps[j], "SU"))
+    		cur.prefers[5]++;
+    }
+    tmps[0] = (char*)malloc(100*sizeof(char));
+    tmps[0] = strtok(tokens[4], "-");
+    i==1;
+    while(tmps[i-1] != NULL)
+    {
+        tmps[i] = (char *)malloc(100*sizeof(char));
+        tmps[i] = strtok(NULL, "-");
+        i++;
+    }
+    for(j=0;j<i-1;j++)
+    {
+    	ss << tmps[j];
+    	ss >> tmp;
+    	ss.str(string());
+    	ss.clear();
+    	cur.ages.push_back(tmp);
+    }
+    return cur;
 }
 
-void handleClient(int i)
+void sendTicket(Ticket b, int j)
 {
-	char buf[1000] = {'\0'};
-	if(recv(cfd[i], buf, 1000, 0) < -1)
-    {
-    	printf("Connection lost: FD=%d\n", cfd[i]);
-       	close(cfd[i]);
-       	cfd[i] = 0;
-    }
-    printf("%s\n", buf);
-    if(send(cfd[i], "Got the message", 15, 0) == -1)
+	char buf[1000] = {'\0'}, tmp[1000] = {'\0'};
+	int i, x = b.s1.size();
+	for(i=0;i<x;i++)
+	{
+		memset(tmp, '\0', 1000);
+		sprintf(tmp, "%d", b.s1[i].first);
+		strcat(buf, tmp);
+		strcat(buf, "*");
+		memset(tmp, '\0', 1000);
+		sprintf(tmp, "%d", b.s1[i].second);
+		strcat(buf, tmp);
+		strcat(buf, "$");
+	}
+	if(send(j, buf, strlen(buf), 0) == -1)
 	{
 		perror("Server write failed");
 		exit(1);
 	}
+}
+
+void handleClient(Booking b)
+{
+	int j, x;
+	Ticket final;
+	if(b.route==12321)
+    	final = superfast.assignSeats(b);
+    else
+    	final = rajdhani.assignSeats(b);
+    for(j=0,x=final.s1.size();j<x;j++)
+    {
+    	printf("%d %d\n", final.s1[j].first, final.s1[j].second);
+    }
+    sendTicket(final, b.cli_fd);
 }
 
 void handle_new_connection()
@@ -503,7 +203,7 @@ void handle_new_connection()
 			break;
 		}
 	}
-	printf("There are %d clients\n", i);
+	printf("There are %d\n", i+1);
 	if(tmp!=-1)
 	{
 		printf("No room left for more clients\n");
@@ -511,16 +211,33 @@ void handle_new_connection()
 	}
 }
 
+int myfunction(Booking b1, Booking b2)
+{
+	if(b1.seniors==b2.seniors)
+		return (b1.berths>b2.berths);
+	else
+    	return (b1.seniors>b2.seniors);
+}
+
 void readSocks()
 {
 	int i;
+	Booking tmp;
+	vector<Booking> slips;
 	if(FD_ISSET(master_socket, &cur))
 		handle_new_connection();
 	for(i=0;i<CLIENT_LIMIT;i++)
 	{
 		if(FD_ISSET(cfd[i], &cur))
-			handleClient(i);
+		{
+			tmp = parseBooking(i);
+			if(tmp.berths!=-1)
+				slips.push_back(tmp);
+		}
 	}
+	sort(slips.begin(), slips.end(), myfunction);
+	for(i=0;i<slips.size();i++)
+		handleClient(slips[i]);
 }
 
 int main()
@@ -566,7 +283,6 @@ int main()
 
 	while(1)
 	{
-		printf("New select\n");
 		build_select_list();
 		sel_res = select(highsock + 1, &cur, (fd_set *) 0, (fd_set *) 0, &tm);
 		if(sel_res < 0)

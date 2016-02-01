@@ -13,10 +13,32 @@
 
 using namespace std;
 
+void parseTicket(char buf[1000])
+{
+	printf(" Ticket Booked!! .. Details :\n");
+	int i, j;
+	char *tokens[100], *coach, *berth;
+	tokens[0] = (char*)malloc(100*sizeof(char));
+    tokens[0] = strtok(buf, "$");
+    i=1;
+    while(tokens[i-1] != NULL)
+    {
+        tokens[i] = (char *)malloc(100*sizeof(char));
+        tokens[i] = strtok(NULL, "$");
+        i++;
+    }
+    for(j=0;j<i-1;j++)
+    {
+    	coach = strtok(tokens[j], "*");
+    	berth = strtok(NULL, "*");
+    	printf("%s %s\n", coach, berth);
+    }
+}
+
 int main()
 {
-	int sfd, cfd;
-	char buf[1000] = {'\0'}; 
+	int sfd, cfd, size, i, j;
+	char ch, buf[1000] = {'\0'}; 
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&srv_addr, 0, addrlen);
@@ -63,8 +85,7 @@ int main()
 	       	perror ("Client: Receive failed");
 	       	exit (1);
 	    }
-	    printf("Message received\n");
-	    printf("%s\n", buf);
+	    parseTicket(buf);
 	    sleep(2);
 	}
     return 0;

@@ -22,6 +22,427 @@ Train::Train(int ac, int nonac, int type, int cabins)
 	nonac_coaches.assign(nonac, Coach(tier, num_cabin));
 }
 
+Ticket Train::getSeats(bool flagger, Booking y)
+{
+	vector<Coach> x;
+	if(flagger)
+		x = this->ac_coaches;
+	else
+		x = this->nonac_coaches;
+	printf("available - %d\n", x[0].reserved);
+	int num_coaches = x.size(), i, prob = -1, num_seats, j, here=0, tmp, t0, t1, t2, t3, t4, t5;
+	Ticket final;
+	final.s1.clear();
+	for(i=0;i<num_coaches;i++)
+	{
+		if(((x[i].total)-(x[i].reserved)) >= y.berths)
+		{
+			tmp = 0;
+			t0 = y.prefers[0];
+			t1 = (y.prefers[1]-x[i].num_LB);
+			t2 = (y.prefers[2]-x[i].num_MB);
+			t3 = (y.prefers[3]-x[i].num_UB);
+			t4 = (y.prefers[4]-x[i].num_SL);
+			t5 = (y.prefers[5]-x[i].num_SU);
+			if(t1 <= 0)
+				tmp += y.prefers[1];
+			else
+				tmp += x[i].num_LB;
+			if(t2 <= 0)
+				tmp += y.prefers[2];
+			else
+				tmp += x[i].num_MB;
+			if(t3 <= 0)
+				tmp += y.prefers[3];
+			else
+				tmp += x[i].num_UB;
+			if(t4 <= 0)
+				tmp += y.prefers[4];
+			else
+				tmp += x[i].num_SL;
+			if(t5 <= 0)
+				tmp += y.prefers[5];
+			else
+				tmp += x[i].num_SU;
+			if(tmp >= here)
+			{
+				here = tmp;
+				prob = i;
+			}
+			if(t1<=0 && t2<=0 && t3<=0 && t4<=0 && t5<=0)
+			{
+				t0 = y.prefers[0];
+				t1 = y.prefers[1];
+				t2 = y.prefers[2];
+				t3 = y.prefers[3];
+				t4 = y.prefers[4];
+				t5 = y.prefers[5];
+				num_seats = x[i].seats.size();
+				for(j=0;j<num_seats;j++)
+				{
+					if(x[i].seats[j].booked)
+						continue;
+					switch (x[i].seats[j].b)
+					{
+						case LB:
+						{
+							if(t1 > 0)
+							{
+								final.s1.push_back(make_pair(i+1, j+1));
+								x[i].seats[j].booked = true;
+								x[i].reserved++;
+								x[i].num_LB--;
+								t1--;
+							}
+							break;
+						}
+						case MB:
+						{
+							if(t2 > 0)
+							{
+								final.s1.push_back(make_pair(i+1, j+1));
+								x[i].seats[j].booked = true;
+								x[i].reserved++;
+								x[i].num_MB--;
+								t2--;
+							}
+							break;
+						}
+						case UB:
+						{
+							if(t3 > 0)
+							{
+								final.s1.push_back(make_pair(i+1, j+1));
+								x[i].seats[j].booked = true;
+								x[i].reserved++;
+								x[i].num_UB--;
+								t3--;
+							}
+							break;
+						}
+						case SL:
+						{
+							if(t4 > 0)
+							{
+								final.s1.push_back(make_pair(i+1, j+1));
+								x[i].seats[j].booked = true;
+								x[i].reserved++;
+								x[i].num_SL--;
+								t4--;
+							}
+							break;
+						}
+						case SU:
+						{
+							if(t5 > 0)
+							{
+								final.s1.push_back(make_pair(i+1, j+1));
+								x[i].seats[j].booked = true;
+								x[i].reserved++;
+								x[i].num_SU--;
+								t5--;
+							}
+							break;
+						}
+					}
+				}
+				for(j=0;j<num_seats && t0>0;j++)
+				{
+					if(x[i].seats[j].booked)
+						continue;
+					final.s1.push_back(make_pair(i+1, j+1));
+					x[i].seats[j].booked = true;
+					x[i].reserved++;
+					switch (x[i].seats[j].b)
+					{
+						case LB:
+							x[i].num_LB--;
+							break;
+						case MB:
+							x[i].num_MB--;
+							break;
+						case UB:
+							x[i].num_UB--;
+							break;
+						case SL:
+							x[i].num_SL--;
+							break;
+						case SU:
+							x[i].num_SU--;
+							break;
+					}
+					t0--;
+				}
+				if(flagger)
+					this->ac_coaches = x;
+				else
+					this->nonac_coaches = x;
+				return final;
+			}
+		}
+	}
+	if(prob!=-1)
+	{
+		i = prob;
+		num_seats = x[i].seats.size();
+		t0 = y.prefers[0];
+		t1 = y.prefers[1];
+		t2 = y.prefers[2];
+		t3 = y.prefers[3];
+		t4 = y.prefers[4];
+		t5 = y.prefers[5];		
+		for(j=0;j<num_seats;j++)
+		{
+			if(x[i].seats[j].booked)
+				continue;
+			switch (x[i].seats[j].b)
+			{
+				case LB:
+				{
+					if(t1 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_LB--;
+						t1--;
+					}
+					break;
+				}
+				case MB:
+				{
+					if(t2 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_MB--;
+						t2--;
+					}
+					break;
+				}
+				case UB:
+				{
+					if(t3 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_UB--;
+						t3--;
+					}
+					break;
+				}
+				case SL:
+				{
+					if(t4 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_SL--;
+						t4--;
+					}
+					break;
+				}
+				case SU:
+				{
+					if(t5 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_SU--;
+						t5--;
+					}
+					break;
+				}
+			}
+		}
+		tmp = t0+t1+t2+t3+t4+t5;
+		for(j=0;j<num_seats && tmp>0;j++)
+		{
+			if(x[i].seats[j].booked)
+				continue;
+			final.s1.push_back(make_pair(i+1, j+1));
+			x[i].seats[j].booked = true;
+			x[i].reserved++;
+			switch (x[i].seats[j].b)
+			{
+				case LB:
+					x[i].num_LB--;
+					break;
+				case MB:
+					x[i].num_MB--;
+					break;
+				case UB:
+					x[i].num_UB--;
+					break;
+				case SL:
+					x[i].num_SL--;
+					break;
+				case SU:
+					x[i].num_SU--;
+					break;
+			}
+			tmp--;
+		}
+		if(flagger)
+			this->ac_coaches = x;
+		else
+			this->nonac_coaches = x;
+		return final;
+	}
+	t0 = y.prefers[0];
+	t1 = y.prefers[1];
+	t2 = y.prefers[2];
+	t3 = y.prefers[3];
+	t4 = y.prefers[4];
+	t5 = y.prefers[5];
+	for(i=0;i<num_coaches;i++)
+	{
+		if(x[i].reserved==x[i].total)
+			continue;
+		num_seats = x[i].seats.size();
+		for(j=0;j<num_seats;j++)
+		{
+			if(x[i].seats[j].booked)
+				continue;
+			switch (x[i].seats[j].b)
+			{
+				case LB:
+				{
+					if(t1 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_LB--;
+						t1--;
+					}
+					break;
+				}
+				case MB:
+				{
+					if(t2 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_MB--;
+						t2--;
+					}
+					break;
+				}
+				case UB:
+				{
+					if(t3 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_UB--;
+						t3--;
+					}
+					break;
+				}
+				case SL:
+				{
+					if(t4 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_SL--;
+						t4--;
+					}
+					break;
+				}
+				case SU:
+				{
+					if(t5 > 0)
+					{
+						final.s1.push_back(make_pair(i+1, j+1));
+						x[i].seats[j].booked = true;
+						x[i].reserved++;
+						x[i].num_SU--;
+						t5--;
+					}
+					break;
+				}
+			}
+		}
+	}
+	tmp = t0+t1+t2+t3+t4+t5;
+	for(i=0;i<num_coaches && tmp>0;i++)
+	{
+		if(x[i].reserved==x[i].total)
+			continue;
+		num_seats = x[i].seats.size();
+		for(j=0;j<num_seats && tmp>0;j++)
+		{
+			if(x[i].seats[j].booked)
+				continue;
+			final.s1.push_back(make_pair(i+1, j+1));
+			x[i].seats[j].booked = true;
+			x[i].reserved++;
+			switch (x[i].seats[j].b)
+			{
+				case LB:
+					x[i].num_LB--;
+					break;
+				case MB:
+					x[i].num_MB--;
+					break;
+				case UB:
+					x[i].num_UB--;
+					break;
+				case SL:
+					x[i].num_SL--;
+					break;
+				case SU:
+					x[i].num_SU--;
+					break;
+			}
+			tmp--;
+		}
+	}
+	printf("available123 - %d\n", x[0].reserved);
+	if(flagger)
+		this->ac_coaches = x;
+	else
+		this->nonac_coaches = x;
+	return final;
+}
+
+Ticket Train::assignSeats(Booking x)
+{
+	Ticket ret;
+	if(x.coach)
+	{
+		if(ac_avail < x.berths)
+		{
+			printf("Not available\n");
+			return ret;
+		}
+		ac_avail -= x.berths;
+		ac_reserved += x.berths;
+		ret = this->getSeats(true, x);
+	}
+	else
+	{
+		if(nonac_avail < x.berths)
+		{
+			printf("Not available\n");
+			return ret;
+		}
+		nonac_avail -= x.berths;
+		nonac_reserved += x.berths;
+		ret = this->getSeats(false, x);
+	}
+	return ret;
+}
+
 Coach::Coach(int tier, int num_cabin)
 {
 	int i;

@@ -174,9 +174,15 @@ Ticket Train::getSeats(bool flagger, Booking y)
 					t0--;
 				}
 				if(flagger)
+				{
+					final.ticket_type = 1;
 					this->ac_coaches = x;
+				}
 				else
+				{
+					final.ticket_type = 0;
 					this->nonac_coaches = x;
+				}
 				return final;
 			}
 		}
@@ -288,9 +294,15 @@ Ticket Train::getSeats(bool flagger, Booking y)
 			tmp--;
 		}
 		if(flagger)
+		{
+			final.ticket_type = 1;
 			this->ac_coaches = x;
+		}
 		else
+		{
+			final.ticket_type = 0;
 			this->nonac_coaches = x;
+		}
 		return final;
 	}
 	t0 = y.prefers[0];
@@ -409,9 +421,15 @@ Ticket Train::getSeats(bool flagger, Booking y)
 	}
 	printf("available123 - %d\n", x[0].reserved);
 	if(flagger)
+	{
+		final.ticket_type = 1;
 		this->ac_coaches = x;
+	}
 	else
+	{
+		final.ticket_type = 0;
 		this->nonac_coaches = x;
+	}
 	return final;
 }
 

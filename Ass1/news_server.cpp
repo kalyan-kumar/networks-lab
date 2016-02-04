@@ -430,7 +430,7 @@ int main(int argc, char **argv)
 	}
 	else if (pida == 0)
 	{
-		int sfd;
+		int sfd, reuse_addr = 1;
 		struct sockaddr_in srv_addr;
     	socklen_t addrlen = sizeof (struct sockaddr_in);
     	memset (&srv_addr, 0, addrlen);
@@ -441,6 +441,7 @@ int main(int argc, char **argv)
 	        exit (1);
 	    }
 	    printf ("Socket fd = %d\n", sfd);
+	    setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,sizeof(reuse_addr));
 	    srv_addr.sin_family = AF_INET;
     	srv_addr.sin_port   = htons (23465);
 	    if (inet_pton (AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
@@ -461,7 +462,7 @@ int main(int argc, char **argv)
 	}
 	else
 	{
-		int sfd, cfd;
+		int sfd, cfd, reuse_addr = 1;
 		char buf[1000];
 		struct sockaddr_in srv_addr, cli_addr;
 		socklen_t addrlen = sizeof(struct sockaddr_in);
@@ -476,9 +477,9 @@ int main(int argc, char **argv)
 			exit(1);
 		}
 		printf("Socket fd = %d\n", sfd);
-		
+		setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,sizeof(reuse_addr));
 		srv_addr.sin_family = AF_INET;
-		srv_addr.sin_port   = htons(21435);
+		srv_addr.sin_port   = htons(21634);
 		if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
 		{
 			perror("Network address conversion.\n");

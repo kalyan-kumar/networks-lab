@@ -31,6 +31,7 @@ public:
 class Ticket
 {
 public:
+	int ticket_number, ticket_type;
 	vector<pair<int,int> > s1;
 };
 

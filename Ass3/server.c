@@ -19,6 +19,8 @@
 #define SRC_ADDR "10.146.119.73"
 #define DST_ADDR "10.109.67.65"
 
+int sequence, acknowledge;
+
 struct rtlphdr
 {
     u_int32_t checksum;
@@ -132,6 +134,11 @@ void threeWayHandshake(int sfd)
 		exit(1);
 	}
 	printf("Successful\n");
+}
+
+void recvPacket(int sfd, char A[])
+{
+
 }
 
 int main()

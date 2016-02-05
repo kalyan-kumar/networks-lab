@@ -16,7 +16,7 @@
 
 #define PORT_NUM 21435
 #define SRC_ADDR "10.5.16.222"
-#define DST_ADDR "10.146.163.221"
+#define DST_ADDR "10.5.16.181"
 
 struct rtlphdr
 {
@@ -49,27 +49,18 @@ unsigned short csum(unsigned short *ptr,int nbytes)
     return(answer);
 }
 
-
-
-int main()
+char *makePacket(int seq, int ack, char A[])
 {
-	int sfd, iph_size, rth_size, msg_size, tot_size;
+    int iph_size, rth_size, msg_size, tot_size;
     iph_size = sizeof(struct iphdr);
     rth_size = sizeof(struct rtlphdr);
-	char datagram[4096] , *data , *pseudogram, rec_buf[1000];
-	struct iphdr *iph = (struct iphdr *) datagram;
+    static char datagram[4096];
+    char *data;
+    struct iphdr *iph = (struct iphdr *) datagram;
     struct rtlphdr *rth = (struct rtlphdr *) (datagram + iph_size);
-    struct sockaddr_in srv_addr, cli_addr;
-
-	sfd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
-    if(sfd == -1)
-    {
-        perror("Failed to create socket");
-        exit(1);
-    }
     memset(datagram, 0, 4096);
     data = datagram + iph_size + rth_size;
-    strcpy(data , "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    strcpy(data , A);
     msg_size = strlen(data);
     tot_size = iph_size + rth_size + msg_size;
 
@@ -90,19 +81,37 @@ int main()
     // RTLP Header
     rth->src_port = htons(PORT_NUM);
     rth->dst_port = htons(PORT_NUM);
-    rth->seq_num = 1;
-    rth->ack_num = 2;
+    rth->seq_num = seq;
+    rth->ack_num = ack;
     rth->checksum = 0;
+
+    return datagram;
+}
+
+int main()
+{
+	int sfd, tot_size;
+    struct sockaddr_in srv_addr, cli_addr;
+    char A[4096], packet[4096], rec_buf[4096];
+    strcpy(A,"ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    strcpy(packet,makePacket(1, 0, A));
+    tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
+
+	sfd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
+    if(sfd == -1)
+    {
+        perror("Failed to create socket");
+        exit(1);
+    }
     
     srv_addr.sin_family = AF_INET;
     srv_addr.sin_port = htons(PORT_NUM);
     srv_addr.sin_addr.s_addr = inet_addr(DST_ADDR);
-    printf("%s\n", datagram + 20);
 
-    if (sendto (sfd, datagram, iph->tot_len ,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
+    if (sendto (sfd, packet, tot_size,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
         perror("sendto failed");
     else
-        printf ("Packet Sent. Length : %d \n" , iph->tot_len);
+        printf ("Packet Sent. Length : %d \n" , tot_size);
     
     memset(rec_buf, 0, 1000);
     int addrlen = sizeof(cli_addr);

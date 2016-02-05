@@ -15,14 +15,16 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
+#define SRC_ADDR "10.5.16.222"
+#define DST_ADDR "10.146.163.221"
 
-struct pseudo_header
+struct rtlphdr
 {
-    u_int32_t source_address;
-    u_int32_t dest_address;
-    u_int8_t placeholder;
-    u_int8_t protocol;
-    u_int16_t tcp_length;
+    u_int16_t src_port;
+    u_int16_t dst_port;
+    u_int32_t seq_num;
+    u_int32_t ack_num;
+    u_int32_t checksum;
 };
 
 unsigned short csum(unsigned short *ptr,int nbytes) 
@@ -47,98 +49,60 @@ unsigned short csum(unsigned short *ptr,int nbytes)
     return(answer);
 }
 
+
+
 int main()
 {
-	int sfd;
+	int sfd, iph_size, rth_size, msg_size, tot_size;
+    iph_size = sizeof(struct iphdr);
+    rth_size = sizeof(struct rtlphdr);
 	char datagram[4096] , *data , *pseudogram, rec_buf[1000];
 	struct iphdr *iph = (struct iphdr *) datagram;
-    struct tcphdr *tcph = (struct tcphdr *) (datagram + sizeof (struct ip));
+    struct rtlphdr *rth = (struct rtlphdr *) (datagram + iph_size);
     struct sockaddr_in srv_addr, cli_addr;
-    struct pseudo_header psh;
 
-	sfd = socket (PF_INET, SOCK_RAW, IPPROTO_TCP);
+	sfd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
     if(sfd == -1)
     {
         perror("Failed to create socket");
         exit(1);
     }
-    //IP_HDRINCL to tell the kernel that headers are included in the packet
-    int one = 1;
-    const int *val = &one; 
-    if (setsockopt (sfd, IPPROTO_IP, IP_HDRINCL, val, sizeof (one)) < 0)
-    {
-        perror("Error setting IP_HDRINCL");
-        exit(0);
-    }
-
-	memset(datagram, 0, 4096);
-    data = datagram + sizeof(struct iphdr) + sizeof(struct tcphdr);
+    memset(datagram, 0, 4096);
+    data = datagram + iph_size + rth_size;
     strcpy(data , "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+    msg_size = strlen(data);
+    tot_size = iph_size + rth_size + msg_size;
 
-    srv_addr.sin_family = AF_INET;
-    srv_addr.sin_port = htons(PORT_NUM);
-    srv_addr.sin_addr.s_addr = inet_addr ("10.5.16.222");						// What is this??
-
+    // IP Header
     iph->ihl = 5;
     iph->version = 4;
     iph->tos = 0;
-    iph->tot_len = sizeof (struct iphdr) + sizeof (struct tcphdr) + strlen(data);
-    iph->id = htonl (54321); //Id of this packet
+    iph->tot_len = tot_size;
+    iph->id = htonl (54321);
     iph->frag_off = 0;
     iph->ttl = 255;
-    iph->protocol = IPPROTO_TCP;
-    iph->check = 0;      //Set to 0 before calculating checksum
-    iph->saddr = inet_addr ("127.0.0.1");    //Spoof the source ip address
-    iph->daddr = srv_addr.sin_addr.s_addr;
+    iph->protocol = IPPROTO_RAW;
+    iph->check = 0;
+    iph->saddr = inet_addr (SRC_ADDR);
+    iph->daddr = inet_addr (DST_ADDR);
+    iph->check = csum ((unsigned short *) datagram, iph->tot_len);
 
-    // IP Checksum
-    iph->check = csum ((unsigned short *) datagram, iph->tot_len);			// What is this?
+    // RTLP Header
+    rth->src_port = htons(PORT_NUM);
+    rth->dst_port = htons(PORT_NUM);
+    rth->seq_num = 1;
+    rth->ack_num = 2;
+    rth->checksum = 0;
+    
+    srv_addr.sin_family = AF_INET;
+    srv_addr.sin_port = htons(PORT_NUM);
+    srv_addr.sin_addr.s_addr = inet_addr(DST_ADDR);
+    printf("%s\n", datagram + 20);
 
-    // TCP Header
-    tcph->source = htons (1234);
-    tcph->dest = htons (80);
-    tcph->seq = 0;
-    tcph->ack_seq = 0;
-    tcph->doff = 5;  //tcp header size
-    tcph->fin=0;
-    tcph->syn=1;
-    tcph->rst=0;
-    tcph->psh=0;
-    tcph->ack=0;
-    tcph->urg=0;
-    tcph->window = htons (5840); /* maximum allowed window size */
-    tcph->check = 0; //leave checksum 0 now, filled later by pseudo header
-    tcph->urg_ptr = 0;
-
-    // Now the TCP checksum
-    psh.source_address = inet_addr("127.0.0.1");
-    psh.dest_address = srv_addr.sin_addr.s_addr;
-    //printf("%d\n", psh.dest_address);
-    psh.placeholder = 0;
-    psh.protocol = IPPROTO_TCP;
-    psh.tcp_length = htons(sizeof(struct tcphdr) + strlen(data) );
-
-    int psize = sizeof(struct pseudo_header) + sizeof(struct tcphdr) + strlen(data);
-    pseudogram = malloc(psize);
-
-    memcpy(pseudogram , (char*) &psh , sizeof (struct pseudo_header));
-    memcpy(pseudogram + sizeof(struct pseudo_header) , tcph , sizeof(struct tcphdr) + strlen(data));
-
-    tcph->check = csum( (unsigned short*) pseudogram , psize);
-
-     
-    //loop if you want to flood :)
-    //while (1)
-    //{
-        //Send the packet
-        if (sendto (sfd, datagram, iph->tot_len ,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
-            perror("sendto failed");
-        //Data send successfully
-        else
-        {
-            printf ("Packet Sent. Length : %d \n" , iph->tot_len);
-        }
-    //}
+    if (sendto (sfd, datagram, iph->tot_len ,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
+        perror("sendto failed");
+    else
+        printf ("Packet Sent. Length : %d \n" , iph->tot_len);
     
     memset(rec_buf, 0, 1000);
     int addrlen = sizeof(cli_addr);

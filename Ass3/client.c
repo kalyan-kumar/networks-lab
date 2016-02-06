@@ -16,7 +16,7 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.146.119.73"
+#define SRC_ADDR "10.5.16.222"
 #define DST_ADDR "10.109.67.65"
 
 int sequence, acknowledge;
@@ -52,7 +52,7 @@ unsigned short csum(unsigned short *ptr,int nbytes)
     return(answer);
 }
 
-char *makePacket(char datagram[], int seq, int ack, char A[])
+void makePacket(char datagram[], int seq, int ack, char A[])
 {
     int iph_size, rth_size, msg_size, tot_size;
     iph_size = sizeof(struct iphdr);
@@ -86,8 +86,6 @@ char *makePacket(char datagram[], int seq, int ack, char A[])
     rth->seq_num = seq;
     rth->ack_num = ack;
     rth->checksum = 0;
-
-    return datagram;
 }
 
 void threeWayHandshake(int sfd, struct sockaddr_in srv_addr)
@@ -140,7 +138,7 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
     struct sockaddr_in cli_addr;
     char pack[4096], rec_buf[4096];
     struct rtlphdr *rec_rth;
-    int tot_size, rn, byte_size = strlen(A);
+    int tot_size, rn, byte_size = strlen(A), addrlen = sizeof(cli_addr);
     sequence += byte_size;
     makePacket(pack, sequence, acknowledge, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + byte_size;

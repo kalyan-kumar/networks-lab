@@ -138,7 +138,32 @@ void threeWayHandshake(int sfd)
 
 void recvPacket(int sfd, char A[])
 {
-
+    struct sockaddr_in srv_addr, cli_addr;  
+    int tot_size, syn, ack, addrlen = sizeof(cli_addr);
+    char rec_buf[4096], pack[4096];
+    
+    memset(rec_buf, 0, 4096);
+    int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
+    if(rn < 0)
+        perror("packet receive error:");
+    if(rn == 0)
+        printf("the peer has performed an orderly shutdown\n");
+    printf("Received data - %s\n", rec_buf + 36);
+    
+    struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+    strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
+    acknowledge +=strlen(A);
+    char servdata[4096];
+    strcpy(servdata,"\0");
+    makePacket(pack, sequence, acknowledge, servdata);
+    acknowledge-=strlen(A)
+    tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr)+strlen(servdata) ;
+    if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &cli_addr, sizeof (cli_addr)) < 0)
+        perror("sendto failed");
+    else
+        printf ("Packet Sent. Length : %d \n" , tot_size);
+    
+    
 }
 
 int main()

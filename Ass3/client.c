@@ -29,28 +29,36 @@ struct rtlphdr
     u_int32_t seq_num;
     u_int32_t ack_num;
 };
-
-unsigned short csum(unsigned short *ptr,int nbytes) 
+unsigned short csum(unsigned short *buf, int len)
 {
-    register long sum;
-    unsigned short oddbyte;
-    register short answer;
- 
-    sum=0;
-    while(nbytes>1) {
-        sum+=*ptr++;
-        nbytes-=2;
-    }
-    if(nbytes==1) {
-        oddbyte=0;
-        *((u_char*)&oddbyte)=*(u_char*)ptr;
-        sum+=oddbyte;
-    }
-    sum = (sum>>16)+(sum & 0xffff);
-    sum = sum + (sum>>16);
-    answer=(short)~sum;
-    return(answer);
+        unsigned long sum;
+        for(sum=0; len>0; len--)
+                sum += *buf++;
+        sum = (sum >> 16) + (sum &0xffff);
+        sum += (sum >> 16);
+        return (unsigned short)(~sum);
 }
+// unsigned short csum(unsigned short *ptr,int nbytes) 
+// {
+//     register long sum;
+//     unsigned short oddbyte;
+//     register short answer;
+ 
+//     sum=0;
+//     while(nbytes>1) {
+//         sum+=*ptr++;
+//         nbytes-=2;
+//     }
+//     if(nbytes==1) {
+//         oddbyte=0;
+//         *((u_char*)&oddbyte)=*(u_char*)ptr;
+//         sum+=oddbyte;
+//     }
+//     sum = (sum>>16)+(sum & 0xffff);
+//     sum = sum + (sum>>16);
+//     answer=(short)~sum;
+//     return(answer);
+// }
 
 void makePacket(char datagram[], int seq, int ack, char A[])
 {
@@ -85,7 +93,7 @@ void makePacket(char datagram[], int seq, int ack, char A[])
     rth->dst_port = htons(PORT_NUM);
     rth->seq_num = seq;
     rth->ack_num = ack;
-    rth->checksum = 0;
+    rth->checksum = csum((unsigned short *)datagram+sizeof(struct iphdr)+4,strlen(datagram)-4-sizeof(struct iphdr));
 }
 
 void threeWayHandshake(int sfd, struct sockaddr_in srv_addr)
@@ -132,7 +140,52 @@ void threeWayHandshake(int sfd, struct sockaddr_in srv_addr)
         printf ("Packet Sent. Length : %d \n" , tot_size);
     printf("Successful\n");
 }
+void connectiontermination(int sfd, struct sockaddr_in srv_addr)
+{
+    struct sockaddr_in cli_addr;
+    int tot_size, addrlen = sizeof(cli_addr);
+    char rec_buf[4096], pack[4096], A[4096];
+    
+    memset(A, 0, 4096);
+    strcpy(A, "Let's begin with a firm handshake");
+    sequence = rand()%9 + 1;
+    makePacket(pack, sequence, 0, A);
+    tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
+    if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
+        perror("sendto failed");
+    else
+        printf ("Packet Sent. Length : %d \n" , tot_size);
 
+    memset(rec_buf, 0, 4096);
+    int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
+    if(rn < 0)
+        perror("packet receive error:");
+    if(rn == 0)
+        printf("the peer has performed an orderly shutdown\n");
+    printf("Received data - %s\n", rec_buf + 36);
+    
+    struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+    memset(A, 0, 4096);
+    strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
+    if(sequence!=rec_rth->ack_num)
+    {
+        perror("Connection Failed");
+        exit(1);
+    }
+    printf("seq - %d\n", sequence);
+    acknowledge = rec_rth->seq_num;
+    printf("ack - %d\n", acknowledge);
+    memset(pack, 0, 4096);
+    makePacket(pack, sequence, acknowledge, A);
+    tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
+    if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
+        perror("sendto failed");
+    else
+        printf ("Packet Sent. Length : %d \n" , tot_size);
+    printf("Successfully terminated\n");
+    exit(1);
+
+}
 void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
 {
     struct sockaddr_in cli_addr;

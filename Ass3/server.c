@@ -16,8 +16,8 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.5.16.181"
-#define DST_ADDR "10.5.16.222"
+#define SRC_ADDR "10.5.16.222"
+#define DST_ADDR "10.5.16.181"
 
 int sequence, acknowledge;
 

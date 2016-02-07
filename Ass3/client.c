@@ -149,7 +149,7 @@ void connectiontermination(int sfd, struct sockaddr_in srv_addr)
     memset(A, 0, 4096);
     strcpy(A, "Let's begin with a firm handshake");
     sequence = rand()%9 + 1;
-    makePacket(pack, sequence, 0, A);
+    makePacket(pack, 0, 0, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
     if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
         perror("sendto failed");
@@ -167,16 +167,14 @@ void connectiontermination(int sfd, struct sockaddr_in srv_addr)
     struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
     memset(A, 0, 4096);
     strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
-    if(sequence!=rec_rth->ack_num)
+    if(rec_rth->ack_num!=0)
     {
         perror("Connection Failed");
         exit(1);
     }
-    printf("seq - %d\n", sequence);
-    acknowledge = rec_rth->seq_num;
-    printf("ack - %d\n", acknowledge);
+   
     memset(pack, 0, 4096);
-    makePacket(pack, sequence, acknowledge, A);
+    makePacket(pack, 0, rec_rth->seq_num, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
     if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &srv_addr, sizeof (srv_addr)) < 0)
         perror("sendto failed");

@@ -89,7 +89,7 @@ void makePacket(char datagram[], int seq, int ack, char A[])
     iph->check = 0;
     iph->saddr = inet_addr (SRC_ADDR);
     iph->daddr = inet_addr (DST_ADDR);
-    iph->check = csum ((unsigned short *) datagram, iph->tot_len);
+    iph->check = csum((unsigned short*)datagram+sizeof(struct iphdr)+4,strlen(datagram)-4-sizeof(struct iphdr));
 
     // RTLP Header
     rth->src_port = htons(PORT_NUM);
@@ -150,21 +150,21 @@ void connectiontermination(int sfd)
     char rec_buf[4096], pack[4096], A[4096];
     
     memset(rec_buf, 0, 4096);
-    int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
-    if(rn < 0)
-        perror("packet receive error:");
-    if(rn == 0)
-        printf("the peer has performed an orderly shutdown\n");
-    printf("Received data - %s\n", rec_buf + 36);
+    // int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
+    // if(rn < 0)
+    //     perror("packet receive error:");
+    // if(rn == 0)
+    //     printf("the peer has performed an orderly shutdown\n");
+    // printf("Received data - %s\n", rec_buf + 36);
     
-    struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
-    strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
-    acknowledge = rec_rth->seq_num;
-    printf("seq - %d\n", acknowledge);
-    sequence = rand()%10;
-    printf("ack - %d\n", sequence);
+    // struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+    // strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
+    // acknowledge = rec_rth->seq_num;
+    // printf("seq - %d\n", acknowledge);
+    // sequence = rand()%10;
+    // printf("ack - %d\n", sequence);
     
-    makePacket(pack, sequence, acknowledge, A);
+    makePacket(pack, -1, 0, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
     if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &cli_addr, sizeof (cli_addr)) < 0)
         perror("sendto failed");
@@ -173,20 +173,19 @@ void connectiontermination(int sfd)
 
     memset(rec_buf, 0, 4096);
 
-    rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
+    int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
     if( rn < 0)
         perror("packet receive error:");
     if (rn == 0)
         printf("the peer has performed an orderly shutdown\n");
-    rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+    struct rtlphdr * rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
 
-    if(rec_rth->seq_num!=acknowledge || rec_rth->ack_num!=sequence)
+    if(rec_rth->seq_num==0 || rec_rth->ack_num==-1)
     {
-        perror("Connection Broken");
-        exit(1);
+         printf("Successfully Terminated\n");
+         exit(1);
     }
-    printf("Successful\n");
-    exit(1);
+   
 }
 
 char* recvPacket(int sfd)
@@ -215,7 +214,9 @@ char* recvPacket(int sfd)
 
         if(csum((unsigned short*)rec_buf+sizeof(struct iphdr)+4,strlen(rec_buf)-4-sizeof(struct iphdr))==rec_rth->checksum)
         {
-        	strcpy(dat, "Received");				// Put response here
+        	strcpy(dat, "Received");
+            if(rec_rth->seq_num==0)
+                connectiontermination(sfd);				// Put response here
         	makePacket(pack, sequence+strlen(dat), acknowledge+strlen(A), dat);
         	tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(dat);
     	    if (sendto (sfd, pack, tot_size,  0, (struct sockaddr *) &cli_addr, sizeof (cli_addr)) < 0)

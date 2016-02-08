@@ -165,6 +165,10 @@ void connectiontermination(int sfd, struct sockaddr_in srv_addr)
     printf("Received data - %s\n", rec_buf + 36);
     
     struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+    if(csum((unsigned short*)rec_buf+sizeof(struct iphdr)+4,strlen(rec_buf)-4-sizeof(struct iphdr))!=rec_rth->checksum)
+    {
+        printf("checksum error\n");
+    }
     memset(A, 0, 4096);
     strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
     if(rec_rth->ack_num!=0)
@@ -222,6 +226,10 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
                 printf("the peer has performed an orderly shutdown\n");
             printf("Received datas is  - %s\n", rec_buf + 36);
             rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
+            if(csum((unsigned short*)rec_buf+sizeof(struct iphdr)+4,strlen(rec_buf)-4-sizeof(struct iphdr))!=rec_rth->checksum)
+            {
+                printf("checksum error\n");
+            }
         }
     }while(rec_rth->ack_num < sequence);
     if(rec_rth->seq_num > acknowledge)

@@ -30,30 +30,6 @@ struct rtlphdr
     u_int32_t ack_num;
 };
 
-
-
-// unsigned short csum(unsigned short *ptr,int nbytes) 
-// {
-//     register long sum;
-//     unsigned short oddbyte;
-//     register short answer;
- 
-//     sum=0;
-//     while(nbytes>1) {
-//         sum+=*ptr++;
-//         nbytes-=2;
-//     }
-//     if(nbytes==1) {
-//         oddbyte=0;
-//         *((u_char*)&oddbyte)=*(u_char*)ptr;
-//         sum+=oddbyte;
-//     }
- 
-//     sum = (sum>>16)+(sum & 0xffff);
-//     sum = sum + (sum>>16);
-//     answer=(short)~sum;
-//     return(answer);
-// }
 unsigned short csum (unsigned short *buf, int nwords)
 {
   unsigned long sum;
@@ -63,6 +39,7 @@ unsigned short csum (unsigned short *buf, int nwords)
   sum += (sum >> 16);
   return (unsigned short)(~sum);
 }
+
 void makePacket(char datagram[], int seq, int ack, char A[])
 {
     int iph_size, rth_size, msg_size, tot_size;
@@ -148,6 +125,7 @@ void threeWayHandshake(int sfd)
     }
     printf("Successful\n");
 }
+
 void connectiontermination(int sfd,struct sockaddr_in  cli_addr)
 {
     struct sockaddr_in srv_addr;
@@ -188,11 +166,7 @@ void connectiontermination(int sfd,struct sockaddr_in  cli_addr)
     if (rn == 0)
         printf("the peer has performed an orderly shutdown\n");
     struct rtlphdr * rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
-     if(csum((unsigned short*)rec_buf+sizeof(struct iphdr)+4,strlen(rec_buf)-4-sizeof(struct iphdr))!=rec_rth->checksum)
-    {
-        printf("checksum error\n");
-    }
-    
+    printf("here too maybe\n");
     if(rec_rth->seq_num==0 || rec_rth->ack_num==-1)
     {
          printf("Successfully Terminated\n");
@@ -265,6 +239,7 @@ int main()
         exit(1);
     }
     threeWayHandshake(sfd);
+
     while(1)
         strcpy(A,recvPacket(sfd));
 
@@ -283,5 +258,7 @@ int main()
  //        perror("sendto failed");
  //    else
  //        printf ("Packet Sent. Length : %d \n" , tot_size);
+
+
     return 0;
 }

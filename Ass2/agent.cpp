@@ -13,11 +13,24 @@
 
 using namespace std;
 
-void parseTicket(char buf[1000])
+void parseTicket(char inp[1000])
 {
-	printf(" Ticket Booked!! .. Details :\n");
+	printf("Ticket Booked!! .. Details :\n");
 	int i, j;
-	char *tokens[100], *coach, *berth;
+	char *tokens[100], *coach, *berth, *route, *buf, mod;
+	coach = strtok(inp, "%");
+	route = strtok(NULL, "%");
+	buf = strtok(NULL, "%");
+	if(strcmp(coach, "12321"))
+	{
+		printf("Train No: 12321\t\tTrain Name: Superfast Express\n%s\n", route);
+		mod = 8;
+	}
+	else
+	{
+		printf("Train No: 12301\t\tTrain Name: Rajdhani Express\n%s\n", route);
+		mod = 6;
+	}
 	tokens[0] = (char*)malloc(100*sizeof(char));
     tokens[0] = strtok(buf, "$");
     i=1;
@@ -27,12 +40,14 @@ void parseTicket(char buf[1000])
         tokens[i] = strtok(NULL, "$");
         i++;
     }
+    printf("Coach\tSeat\n");
     for(j=0;j<i-1;j++)
     {
     	coach = strtok(tokens[j], "*");
     	berth = strtok(NULL, "*");
-    	printf("%s %s\n", coach, berth);
+    	printf("%s\t%s\t\n", coach, berth);
     }
+    printf("\n");
 }
 
 int main()
@@ -51,7 +66,7 @@ int main()
 		perror("Clent: socket error");
 		exit(1);
 	}
-	printf("Socket fd=%d\n", sfd);
+	printf("Socket fd=%d\n\n", sfd);
 
 	srv_addr.sin_family = AF_INET;
 	srv_addr.sin_port   = htons(21435);
@@ -72,13 +87,12 @@ int main()
 	{
 		if(buf[strlen(buf)-1] == '\n')
 			buf[strlen(buf)-1] = '\0';
-		printf("%s\n", buf);
+		printf("Sending request - %s\n", buf);
 		if(send(sfd, buf, 1000, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
-		printf("Message sent\n");
 		memset(buf, '\0', 1000);
 		if(recv(sfd, buf, 1000, 0) == -1)
 	    {

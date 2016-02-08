@@ -16,8 +16,8 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.5.16.181"
-#define DST_ADDR "10.146.103.44"
+#define SRC_ADDR "10.105.76.18"
+#define DST_ADDR "10.146.178.167"
 
 int sequence, acknowledge;
 
@@ -73,7 +73,7 @@ void makePacket(char datagram[], int seq, int ack, char A[])
     rth->dst_port = htons(PORT_NUM);
     rth->seq_num = seq;
     rth->ack_num = ack;
-    rth->checksum = 0;
+    rth->checksum = csum((unsigned short *)datagram+sizeof(struct iphdr)+4,strlen(datagram)-4-sizeof(struct iphdr));;
 }
 
 void threeWayHandshake(int sfd)
@@ -89,14 +89,14 @@ void threeWayHandshake(int sfd)
     if(rn == 0)
         printf("the peer has performed an orderly shutdown\n");
     printf("%s\n",inet_ntoa(cli_addr.sin_addr) );
-    printf("Received data - %s\n", rec_buf + 36);
+    //printf("Received data - %s\n", rec_buf + 36);
     
     struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
     strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
     acknowledge = rec_rth->seq_num;
-    printf("seq - %d\n", acknowledge);
+    //printf("seq - %d\n", acknowledge);
     sequence = rand()%10;
-    printf("ack - %d\n", sequence);
+    //printf("ack - %d\n", sequence);
     
     makePacket(pack, sequence, acknowledge, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
@@ -117,8 +117,7 @@ void threeWayHandshake(int sfd)
     {
         printf("checksum error\n");
     }
-    printf("received - %s\n", rec_buf+36);
-
+    //printf("received - %s\n", rec_buf+36);
     if(rec_rth->seq_num!=acknowledge || rec_rth->ack_num!=sequence)
     {
         perror("Connection Broken");
@@ -134,20 +133,6 @@ void connectiontermination(int sfd,struct sockaddr_in  cli_addr)
     char rec_buf[4096], pack[4096], A[4096];
     
     memset(rec_buf, 0, 4096);
-    // int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
-    // if(rn < 0)
-    //     perror("packet receive error:");
-    // if(rn == 0)
-    //     printf("the peer has performed an orderly shutdown\n");
-    // printf("Received data - %s\n", rec_buf + 36);
-    
-    // struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
-    // strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
-    // acknowledge = rec_rth->seq_num;
-    // printf("seq - %d\n", acknowledge);
-    // sequence = rand()%10;
-    // printf("ack - %d\n", sequence);
-    printf("came here\n");
     strcpy(A,"ending");
     makePacket(pack, -1, 0, A);
     
@@ -167,13 +152,11 @@ void connectiontermination(int sfd,struct sockaddr_in  cli_addr)
     if (rn == 0)
         printf("the peer has performed an orderly shutdown\n");
     struct rtlphdr * rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
-    printf("here too maybe\n");
     if(rec_rth->seq_num==0 || rec_rth->ack_num==-1)
     {
          printf("Successfully Terminated\n");
          exit(1);
     }
-   
 }
 
 char* recvPacket(int sfd)
@@ -186,7 +169,6 @@ char* recvPacket(int sfd)
     int flag=0,quitflag=0;
     memset(rec_buf, 0, 4096);
     do{
-        printf("losdasd\n");
         memset(rec_buf, 0, 4096);
         memset(A, 0, 4096);
         memset(dat, 0, 4096);
@@ -197,13 +179,15 @@ char* recvPacket(int sfd)
             perror("packet receive error:");
         if(rn == 0)
             printf("the peer has performed an orderly shutdown\n");
-        printf("Received datas - %s\n", rec_buf + 36);
         rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));
         strcpy(A, rec_buf+ sizeof(struct iphdr) + sizeof(struct rtlphdr));
 
         if(csum((unsigned short*)rec_buf+sizeof(struct iphdr)+4,strlen(rec_buf)-4-sizeof(struct iphdr))==rec_rth->checksum)
         {
-            strcpy(dat, "Received");
+            printf("Received datas - %s\n", rec_buf + 36);
+            int pause = strcspn(A, "0123456789");
+            int number=atoi(A+pause);
+            sprintf(dat," ECHO RES %d", number+1);
             if(rec_rth->seq_num==0)
                 connectiontermination(sfd, cli_addr);               // Put response here
             makePacket(pack, sequence+strlen(dat), acknowledge+strlen(A), dat);
@@ -232,7 +216,6 @@ int main()
     int sfd, tot_size;
     struct sockaddr_in srv_addr, cli_addr;
     char A[4096], packet[4096], rec_buf[4096];
-
     sfd = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
     if(sfd == -1)
     {
@@ -240,26 +223,7 @@ int main()
         exit(1);
     }
     threeWayHandshake(sfd);
-
     while(1)
         strcpy(A,recvPacket(sfd));
-
-    // memset(rec_buf, 0, 1000);
-    // int addrlen = sizeof(cli_addr);
- //    int rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
- //    if( rn < 0)
-    //  perror("packet receive error:");
- //    if (rn == 0)
- //        printf("the peer has performed an orderly shutdown\n");
-    // printf("Received datass - %s\n", rec_buf + 36);
- //    strcpy(A, "Dibya Jyoti Roy");
-    // makePacket(packet, 1, 0, A);
-    // tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
- //    if (sendto (sfd, packet, tot_size,  0, (struct sockaddr *) &cli_addr, sizeof (cli_addr)) < 0)
- //        perror("sendto failed");
- //    else
- //        printf ("Packet Sent. Length : %d \n" , tot_size);
-
-
     return 0;
 }

@@ -29,7 +29,6 @@ Ticket Train::getSeats(bool flagger, Booking y)
 		x = this->ac_coaches;
 	else
 		x = this->nonac_coaches;
-	printf("available - %d\n", x[0].reserved);
 	int num_coaches = x.size(), i, prob = -1, num_seats, j, here=0, tmp, t0, t1, t2, t3, t4, t5;
 	Ticket final;
 	final.s1.clear();
@@ -419,7 +418,6 @@ Ticket Train::getSeats(bool flagger, Booking y)
 			tmp--;
 		}
 	}
-	printf("available123 - %d\n", x[0].reserved);
 	if(flagger)
 	{
 		final.ticket_type = 1;
@@ -440,7 +438,7 @@ Ticket Train::assignSeats(Booking x)
 	{
 		if(ac_avail < x.berths)
 		{
-			printf("Not available\n");
+			printf("Not enough seats available\n");
 			return ret;
 		}
 		ac_avail -= x.berths;
@@ -451,7 +449,7 @@ Ticket Train::assignSeats(Booking x)
 	{
 		if(nonac_avail < x.berths)
 		{
-			printf("Not available\n");
+			printf("Not enough seats available\n");
 			return ret;
 		}
 		nonac_avail -= x.berths;
@@ -464,7 +462,10 @@ Ticket Train::assignSeats(Booking x)
 Coach::Coach(int tier, int num_cabin)
 {
 	int i;
-	total = tier*num_cabin;
+	if(tier==2)
+		total = 6*num_cabin;
+	else
+		total = 8*num_cabin;
 	reserved = 0;
 	num_LB = num_cabin*2;
 	num_MB = ((tier == 3) ? num_cabin*2 : 0);

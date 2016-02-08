@@ -79,7 +79,7 @@ Booking parseBooking(int k)
        	cur.berths = -1;
        	return cur;
     }
-    printf("%s\n", line);
+    cout << "Request - " << line << endl;
 	int i, j, tmp;
 	char *tokens[100], *tmps[100];
 	cur.cli_fd = cfd[k];
@@ -154,6 +154,12 @@ Booking parseBooking(int k)
 void sendTicket(Ticket b, int j)
 {
 	char buf[1000] = {'\0'}, tmp[1000] = {'\0'};
+	sprintf(buf, "%d", b.ticket_number);
+	strcat(buf, "%");
+	if(b.ticket_type)
+		strcat(buf, "AC Class%");
+	else
+		strcat(buf, "Sleeper Class%");
 	int i, x = b.s1.size();
 	for(i=0;i<x;i++)
 	{
@@ -178,13 +184,20 @@ void handleClient(Booking b)
 	int j, x;
 	Ticket final;
 	if(b.route==12321)
-    	final = superfast.assignSeats(b);
-    else
-    	final = rajdhani.assignSeats(b);
-    for(j=0,x=final.s1.size();j<x;j++)
     {
-    	printf("%d %d\n", final.s1[j].first, final.s1[j].second);
+    	cout << "Booking in Superfast Express" << endl;
+    	final.ticket_number = 12321;
+    	final = superfast.assignSeats(b);
+	}
+    else
+    {
+    	cout << "Booking in Rajdhani Express" << endl;
+    	final.ticket_number = 12301;
+    	final = rajdhani.assignSeats(b);
     }
+    for(j=0,x=final.s1.size();j<x;j++)
+    	printf("%d %d\n", final.s1[j].first, final.s1[j].second);
+    cout << endl;
     sendTicket(final, b.cli_fd);
 }
 
@@ -209,7 +222,6 @@ void handle_new_connection()
 			break;
 		}
 	}
-	printf("There are %d\n", i+1);
 	if(tmp!=-1)
 	{
 		printf("No room left for more clients\n");

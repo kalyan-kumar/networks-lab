@@ -159,8 +159,8 @@ void connectiontermination(int sfd, struct sockaddr_in srv_addr)
     {
         perror("Connection Failed");
         exit(1);
-    }
    
+    }
     memset(pack, 0, 4096);
     makePacket(pack, 0, rec_rth->seq_num, A);
     tot_size = sizeof(struct iphdr) + sizeof(struct rtlphdr) + strlen(A);
@@ -193,8 +193,8 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
             printf ("Packet Sent. Length : %d \n" , tot_size);
         memset(rec_buf, 0, 4096);
 
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 5000;
         FD_ZERO(&readfds);
         FD_SET(sfd, &readfds);
         if(select(sfd+1, &readfds, NULL, NULL, &timeout) < 0)

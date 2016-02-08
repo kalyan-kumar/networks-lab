@@ -16,8 +16,8 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.146.69.7"
-#define DST_ADDR "10.145.29.133"
+#define SRC_ADDR "10.5.16.181"
+#define DST_ADDR "10.146.103.44"
 
 int sequence, acknowledge;
 
@@ -88,6 +88,7 @@ void threeWayHandshake(int sfd)
         perror("packet receive error:");
     if(rn == 0)
         printf("the peer has performed an orderly shutdown\n");
+    printf("%s\n",inet_ntoa(cli_addr.sin_addr) );
     printf("Received data - %s\n", rec_buf + 36);
     
     struct rtlphdr *rec_rth = (struct rtlphdr *) (rec_buf + sizeof(struct iphdr));

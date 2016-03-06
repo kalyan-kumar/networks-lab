@@ -431,15 +431,17 @@ Ticket Train::getSeats(bool flagger, Booking y)
 	return final;
 }
 
-Ticket Train::assignSeats(Booking x)
+void Train::assignSeats(Booking x, Ticket &ret)
 {
-	Ticket ret;
+	//Ticket ret;
+	ret.ticket_id = x.id;
 	if(x.coach)
 	{
 		if(ac_avail < x.berths)
 		{
 			printf("Not enough seats available\n");
-			return ret;
+			return ;
+			//return ret;
 		}
 		ac_avail -= x.berths;
 		ac_reserved += x.berths;
@@ -450,13 +452,14 @@ Ticket Train::assignSeats(Booking x)
 		if(nonac_avail < x.berths)
 		{
 			printf("Not enough seats available\n");
-			return ret;
+			return ;
+			//return ret;
 		}
 		nonac_avail -= x.berths;
 		nonac_reserved += x.berths;
 		ret = this->getSeats(false, x);
 	}
-	return ret;
+	//return ret;
 }
 
 Coach::Coach(int tier, int num_cabin)
@@ -535,3 +538,11 @@ Seat::Seat(int pos, int type)
 		}
 	}
 }
+
+// Ticket::Ticket(const Ticket &t)
+// {
+// 	this->ticket_number = t.ticket_number;
+// 	this->ticket_type = t.ticket_type;
+// 	this->ticket_id = t.ticket_id;
+// 	this->s1 = t.s1;
+// }

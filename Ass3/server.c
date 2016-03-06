@@ -16,8 +16,8 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.105.76.18"
-#define DST_ADDR "10.146.178.167"
+#define SRC_ADDR "10.145.65.97"
+#define DST_ADDR "10.146.80.36"
 
 int sequence, acknowledge;
 
@@ -187,7 +187,7 @@ char* recvPacket(int sfd)
             printf("Received datas - %s\n", rec_buf + 36);
             int pause = strcspn(A, "0123456789");
             int number=atoi(A+pause);
-            sprintf(dat," ECHO RES %d", number+1);
+            sprintf(dat," ECHO REQ %d", number+1);
             if(rec_rth->seq_num==0)
                 connectiontermination(sfd, cli_addr);               // Put response here
             makePacket(pack, sequence+strlen(dat), acknowledge+strlen(A), dat);

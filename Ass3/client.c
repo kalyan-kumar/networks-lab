@@ -17,8 +17,8 @@
 #include <linux/if_packet.h>
 
 #define PORT_NUM 21435
-#define SRC_ADDR "10.146.178.167"
-#define DST_ADDR "10.105.76.18"
+#define SRC_ADDR "10.145.65.97"
+#define DST_ADDR "10.146.80.36"
 
 int sequence, acknowledge;
 
@@ -174,6 +174,7 @@ void connectiontermination(int sfd, struct sockaddr_in srv_addr)
 
 void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
 {
+    int x;
     struct sockaddr_in cli_addr;
     char pack[4096], rec_buf[4096];
     struct rtlphdr *rec_rth;
@@ -192,8 +193,8 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
             printf ("Packet Sent. Length : %d \n" , tot_size);
         memset(rec_buf, 0, 4096);
 
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 100;
         FD_ZERO(&readfds);
         FD_SET(sfd, &readfds);
         if(select(sfd+1, &readfds, NULL, NULL, &timeout) < 0)
@@ -203,6 +204,7 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
         }
         if(FD_ISSET(sfd, &readfds))
         {
+            printf("sdfasdf\n");
             rn = recvfrom(sfd, (char *)&rec_buf, sizeof(rec_buf), 0, (struct sockaddr *)&cli_addr, &addrlen);
             if(rn < 0)
                 perror("packet receive error:");
@@ -215,7 +217,13 @@ void sendPacket(int sfd, char A[], struct sockaddr_in srv_addr)
                 printf("checksum error1\n");
             }
         }
-    }while(rec_rth->ack_num < sequence);
+        printf("asdfsafasdfasd\n");
+        // int x;
+        if(rec_buf==NULL)
+            x = -1;
+        else
+           x = rec_rth->ack_num; 
+    }while(x < sequence);
     acknowledge = rec_rth->seq_num;
 }
 

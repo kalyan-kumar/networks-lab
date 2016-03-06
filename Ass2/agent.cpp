@@ -13,22 +13,28 @@
 
 using namespace std;
 
-void parseTicket(char inp[1000])
+int count1 = 0;
+
+void parseTicket(char inp[1000], char *outfile)
 {
 	printf("Ticket Booked!! .. Details :\n");
 	int i, j;
-	char *tokens[100], *coach, *berth, *route, *buf, mod;
-	coach = strtok(inp, "%");
-	route = strtok(NULL, "%");
-	buf = strtok(NULL, "%");
+	ofstream myfile;
+	char *tokens[100], *coach, *berth, *route, *buf, mod, path[1000];
+	coach = strtok(inp, "#");
+	route = strtok(NULL, "#");
+	buf = strtok(NULL, "#");
+	strcpy(path, "/home/kalyan/networks-lab/Ass2/ReservationLists/");
+	strcat(path, outfile);
+	myfile.open(path, ios::app);
 	if(strcmp(coach, "12321"))
 	{
-		printf("Train No: 12321\t\tTrain Name: Superfast Express\n%s\n", route);
+		myfile << "Booking id: " << ++count1 << "\nTrain No: 12321\t\tTrain Name: Superfast Express\n" << route << "\n";
 		mod = 8;
 	}
 	else
 	{
-		printf("Train No: 12301\t\tTrain Name: Rajdhani Express\n%s\n", route);
+		myfile << "Booking id: " << ++count1 << "\nTrain No: 12301\t\tTrain Name: Rajdhani Express\n" << route << "\n";
 		mod = 6;
 	}
 	tokens[0] = (char*)malloc(100*sizeof(char));
@@ -40,24 +46,32 @@ void parseTicket(char inp[1000])
         tokens[i] = strtok(NULL, "$");
         i++;
     }
-    printf("Coach\tSeat\n");
+    myfile << "Coach\tSeat\n";
     for(j=0;j<i-1;j++)
     {
     	coach = strtok(tokens[j], "*");
     	berth = strtok(NULL, "*");
-    	printf("%s\t%s\t\n", coach, berth);
+    	myfile << coach << "\t\t" << berth << "\t\n";
     }
-    printf("\n");
+    myfile << "\n";
 }
 
-int main()
+int main(int argc, char *argv[])
 {
 	int sfd, cfd, size, i, j;
 	char ch, buf[1000] = {'\0'}; 
 	struct sockaddr_in srv_addr, cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&srv_addr, 0, addrlen);
-	FILE* infile = fopen("/home/kalyan/networks-lab/Ass2/Booking.csv", "r");;
+	if(argc<3)
+	{
+		printf("Enter reservation list name and output file name\n");
+		return 0;
+	}
+	strcpy(buf, "/home/kalyan/networks-lab/Ass2/ReservationLists/");
+	strcat(buf, argv[1]);
+	printf("%s\n", buf);
+	FILE* infile = fopen(buf, "r");;
 	FILE* otfile;
 
 	sfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -99,7 +113,7 @@ int main()
 	       	perror ("Client: Receive failed");
 	       	exit (1);
 	    }
-	    parseTicket(buf);
+	    parseTicket(buf, argv[2]);
 	    sleep(2);
 	}
     return 0;

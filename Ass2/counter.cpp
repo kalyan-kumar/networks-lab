@@ -71,6 +71,7 @@ Booking parseBooking(int k)
 {
 	char line[1000] = {'\0'};
 	Booking cur;
+	cur.seniors = 0;
 	if(recv(cfd[k], line, 1000, 0) == 0)
     {
     	printf("Connection lost: FD=%d\n", cfd[k]);
@@ -95,6 +96,10 @@ Booking parseBooking(int k)
         tokens[i] = strtok(NULL, ",");
         i++;
     }
+    ss << tokens[0];
+    ss >> cur.id;
+    ss.str(string());
+    ss.clear();
     ss << tokens[1];
     ss >> cur.route;
     ss.str(string());
@@ -119,7 +124,7 @@ Booking parseBooking(int k)
     for(j=0;j<i-1;j++)
     {
     	if(strstr(tmps[j], "NA"))
-    		cur.prefers[0]++;
+    		cur.prefers[0] += cur.berths;
     	else if(strstr(tmps[j], "LB"))
     		cur.prefers[1]++;
     	else if(strstr(tmps[j], "MB"))
@@ -147,6 +152,8 @@ Booking parseBooking(int k)
     	ss.str(string());
     	ss.clear();
     	cur.ages.push_back(tmp);
+    	if(tmp>=60)
+    		cur.seniors++;
     }
     return cur;
 }
@@ -154,12 +161,11 @@ Booking parseBooking(int k)
 void sendTicket(Ticket b, int j)
 {
 	char buf[1000] = {'\0'}, tmp[1000] = {'\0'};
-	sprintf(buf, "%d", b.ticket_number);
-	strcat(buf, "%");
+	sprintf(buf, "%d#", b.ticket_number);
 	if(b.ticket_type)
-		strcat(buf, "AC Class%");
+		strcat(buf, "AC Class#");
 	else
-		strcat(buf, "Sleeper Class%");
+		strcat(buf, "Sleeper Class#");
 	int i, x = b.s1.size();
 	for(i=0;i<x;i++)
 	{
@@ -187,13 +193,13 @@ void handleClient(Booking b)
     {
     	cout << "Booking in Superfast Express" << endl;
     	final.ticket_number = 12321;
-    	final = superfast.assignSeats(b);
+    	superfast.assignSeats(b, final);
 	}
     else
     {
     	cout << "Booking in Rajdhani Express" << endl;
     	final.ticket_number = 12301;
-    	final = rajdhani.assignSeats(b);
+    	rajdhani.assignSeats(b, final);
     }
     for(j=0,x=final.s1.size();j<x;j++)
     	printf("%d %d\n", final.s1[j].first, final.s1[j].second);
@@ -334,7 +340,7 @@ int main()
 			else
 				readSocks();
 			kill(pidc, SIGKILL);
-			sleep(2);
+			//sleep(2);
 		}
 	}
 

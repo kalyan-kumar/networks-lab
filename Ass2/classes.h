@@ -22,7 +22,7 @@ enum BERTH_TYPE{
 class Booking
 {
 public:
-	int route, berths, seniors, cli_fd;
+	int id, route, berths, seniors, cli_fd;
 	bool coach;
 	vector<int> prefers;
 	vector<int> ages;
@@ -31,8 +31,9 @@ public:
 class Ticket
 {
 public:
-	int ticket_number, ticket_type;
+	int ticket_number, ticket_type, ticket_id;
 	vector<pair<int,int> > s1;
+	//Ticket(const Ticket &t);
 };
 
 class Seat
@@ -59,7 +60,7 @@ public:
 	vector<Coach> ac_coaches, nonac_coaches;
 	Train(int ac, int nonac, int type, int cabins);
 	Ticket getSeats(bool flagger, Booking y);
-	Ticket assignSeats(Booking x);
+	void assignSeats(Booking x, Ticket &ret);
 };
 
 #endif

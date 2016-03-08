@@ -7,7 +7,7 @@
 
 #define PORT 21634
 
-int makeNode(int port)
+int makeNode(const char* src, int port)
 {
 	int sfd, reuse_addr = 1;
 	struct sockaddr_in srv_addr;
@@ -21,14 +21,9 @@ int makeNode(int port)
 	setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, &reuse_addr,sizeof(reuse_addr));
 	srv_addr.sin_family = AF_INET;
 	srv_addr.sin_port   = htons(port);
-	if(inet_pton(AF_INET, "127.0.0.1", &srv_addr.sin_addr) <= 0)
+	if(inet_pton(AF_INET, src, &srv_addr.sin_addr) <= 0)
 	{
 		perror("Network address conversion.\n");
-		exit(1);
-	}
-	if(bind(sfd, (struct sockaddr *) &srv_addr, addrlen) == -1)
-	{
-		perror("Server: Bind failed");
 		exit(1);
 	}
 	if(connect(sfd, (struct sockaddr *) &srv_addr, sizeof(struct sockaddr_in)) == -1)
@@ -61,7 +56,7 @@ void popClient(int sfd)
 
 int main(int argc, char* argv[])
 {
-	int a, sfd = makeNode(21834);
+	int a, sfd = makeNode("127.0.0.1", 21834);
 	while(1)
 	{
 		printf("Do you want to (1) send or (2) receive emails?\n");

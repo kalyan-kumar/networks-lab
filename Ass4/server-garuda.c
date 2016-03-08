@@ -5,6 +5,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 #define PORT 21634
 
@@ -57,9 +58,9 @@ void smtpClient()
 	// int sfd = makeNode(21634, 1);
 }
 
-void smtpServer()
+void smtpServer(char* src)
 {
-	int sfd = makeNode("127.0.0.1", 21434, 0), cfd;
+	int sfd = makeNode(src, 21434, 0), cfd, flag;
 	struct sockaddr_in cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&cli_addr, 0, addrlen);
@@ -86,7 +87,7 @@ void smtpServer()
 				perror("Server write failed");
 				exit(1);
 			}
-			memset(buf, 0, 1000);
+			memset(buf, 0, 1000);		// HELO: server
 			if(recv(cfd, buf, 1000, 0) == -1)
 			{
 				printf("Didnt get what the client requested for\n");
@@ -99,13 +100,85 @@ void smtpServer()
 				exit(1);
 			}
 			
+
+
+			memset(buf, 0, 1000);		// MAIL FROM: email
+			if(recv(cfd, buf, 1000, 0) == -1)
+			{
+				printf("Didnt get what the client requested for\n");
+				exit(1);
+			}
+			printf("Client says - %s\n", buf);
+			if(send(cfd, "250 OK", 6, 0)==-1)
+			{
+				perror("Server write failed");
+				exit(1);
+			}
+			memset(buf, 0, 1000);		// RCPT TO: email
+			if(recv(cfd, buf, 1000, 0) == -1)
+			{
+				printf("Didnt get what the client requested for\n");
+				exit(1);
+			}
+			if(strcmp(src, strstr(buf, "@")+1) != 0)
+				flag=1;
+			else
+				flag=0;
+			printf("Client says - %s\n", buf);
+			if(send(cfd, "250 OK", 6, 0)==-1)
+			{
+				perror("Server write failed");
+				exit(1);
+			}
+
+
+
+			memset(buf, 0, 1000);		// DATA
+			if(recv(cfd, buf, 1000, 0) == -1)
+			{
+				printf("Didnt get what the client requested for\n");
+				exit(1);
+			}
+			printf("Client says - %s\n", buf);
+			if(send(cfd, "354 start mail input", 20, 0)==-1)
+			{
+				perror("Server write failed");
+				exit(1);
+			}
+			memset(buf, 0, 1000);		// body
+			if(recv(cfd, buf, 1000, 0) == -1)
+			{
+				printf("Didnt get what the client requested for\n");
+				exit(1);
+			}
+			printf("Client says - %s\n", buf);
+			if(send(cfd, "250 OK", 6, 0)==-1)
+			{
+				perror("Server write failed");
+				exit(1);
+			}
+
+
+
+			memset(buf, 0, 1000);		// QUIT
+			if(recv(cfd, buf, 1000, 0) == -1)
+			{
+				printf("Didnt get what the client requested for\n");
+				exit(1);
+			}
+			printf("Client says - %s\n", buf);
+			if(send(cfd, "221 service closed", 6, 0)==-1)
+			{
+				perror("Server write failed");
+				exit(1);
+			}
 		}
 	}
 }
 
-void popServer()
+void popServer(char* src)
 {
-	int sfd = makeNode("127.0.0.1", 21634, 0);
+	int sfd = makeNode(src, 21634, 0);
 	struct sockaddr_in cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&cli_addr, 0, addrlen);
@@ -158,6 +231,13 @@ void popServer()
 
 int main(int argc, char* argv[])
 {
+	if(argc != 2)
+	{
+		printf("Run the executable in <exec-path> <IP-of-server> format\n");
+		return 0;
+	}
+	char A[100];
+	strcpy(A, argv[1]);
 	pid_t s;
 	s = fork();
 	if(s<0)
@@ -166,8 +246,8 @@ int main(int argc, char* argv[])
 		exit(1);
 	}
 	else if(s==0)
-		smtpServer();
+		smtpServer(A);
 	else
-		popServer();
+		popServer(A);
 	return 0;	
 }

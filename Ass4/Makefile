@@ -1,3 +1,5 @@
+all: serG cliG
+
 serG: server-garuda.c
 	gcc server-garuda.c -o serG
 

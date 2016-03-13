@@ -57,7 +57,7 @@ int sendrecieve(char buf[],int type,int sfd)
 		}
 
 
-		if(strcmp(recbuf,"ok")==0)
+		if(strcmp(recbuf,"250 OK")==0)
 			flag=0;
 		else if (strcmp(recbuf,"new")==0)
 		{
@@ -90,6 +90,7 @@ void smtpClient(int sfd)
 		perror ("Client: Receive failed");
 		exit (1);
 	}
+	memset(buf,0,2000);
 	printf("Mail from?\n");
 	scanf("%s\n", A);
 	sprintf(A,"MAIL FROM: %s",A);
@@ -103,39 +104,71 @@ void smtpClient(int sfd)
 	int flag=1;
 	char data[1000];
 	if(sendrecieve("DATA",2,sfd))
+	while(1)
+	{	
+		memset(data,0,1000);
 		scanf("%d",&data);
-	sendrecieve(data,3,sfd);
-	
+
+		if(send(sfd, "Quit",2000, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		sleep(1);
+		if(strcmp(data,".")==0)
+			break;
+ 	}
+ 	if (recv (sfd, buf, 2000, 0) == -1)
+	{
+		perror ("Client: Receive failed");
+		exit (1);
+	}
+	memset(buf,0,2000);
+
+	if(strcmp(buf,"250 OK")==0)
+	{
 	if(send(sfd, "Quit",2000, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
+	memset(buf,0,2000);
 	if (recv (sfd, buf, 2000, 0) == -1)
 	{
 		perror ("Client: Receive failed");
 		exit (1);
 	}
+	}
 	
 	
 }
 
-void popsend(char buf[],int sfd)
+void popsend(char buf[],int sfd,int type)
 {
 	if(send(sfd, buf,2000, 0) == -1)
 	{
 		perror("Server write failed");
 		exit(1);
 	}
-	if (recv (sfd, buf, 1000, 0) == -1)
+	char recbuf[2000];
+	if (recv (sfd, recbuf, 2000, 0) == -1)
 	{
 		perror ("Client: Receive failed");
 		exit (1);
 	}
-	if(strcmp(buf,"ok"))
+	if(type==2)
+	{
+		if(strcmp(buf,"wrong Password"))
+		{
+			return 0;
+		}
+	}
+	else if(strcmp(buf,"OK"))
 	{
 		printf("%s\n",buf );
 	}
+	return 1;
+	
 }
 
 void popClient(int sfd)
@@ -145,24 +178,24 @@ void popClient(int sfd)
 	printf("Username\n");
 	scanf("%s\n", A);
 	sprintf(A,"USER: %s",A);
-	popsend(A,sfd);
+	popsend(A,sfd,1);
 	printf("Password\n");
 	scanf("%s\n", B);
 	sprintf(B,"PASS: %s",B);
-	popsend(B,sfd);
-	popsend("LIST",sfd);
+	popsend(B,sfd,1);
+	popsend("LIST",sfd,1);
 	// sprintf(buf,"%s,%s",A,B);
 	int flag=1;
 	// int flag2=0;
 	while(flag)
 	{
 
-		if(send(sfd, A,100, 0) == -1)
+		if(send(sfd, "retrieve",100, 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
-		if (recv (sfd, buf, 1000, 0) == -1)
+		if (recv (sfd, buf, 2000, 0) == -1)
 		{
 			perror ("Client: Receive failed");
 			exit (1);
@@ -179,7 +212,14 @@ void popClient(int sfd)
 
 int main(int argc, char* argv[])
 {
-	int a, sfd = makeNode("127.0.0.1", 21834);
+	if(argc < 2)
+	{
+		printf("Pass arguments correctly\n");
+		exit(0);
+	}
+	char ip[100];
+	strcpy(ip,argv[1]);
+	int a, sfd = makeNode(ip, 21834);
 	while(1)
 	{
 		printf("Do you want to (1) send or (2) receive emails?\n");

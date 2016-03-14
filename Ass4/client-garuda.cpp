@@ -71,9 +71,10 @@ int sendrecieve(char buf[],int type,int sfd)
 return 0;
 }
 
-void smtpClient(int sfd)
+void smtpClient(char *ip)
 {
 	char A[100], B[100],body[1000],buf[2000];
+	int sfd = makeNode(ip, PORT);
 	if (recv (sfd, buf, 2000, 0) == -1)
 		{
 			perror ("Client: Receive failed");
@@ -182,8 +183,9 @@ void smtpClient(int sfd)
 	
 }
 
-void popClient(int sfd)
+void popClient(char* ip)
 {
+	int sfd;
 	char A[100], B[100],buf[2000];
 
 	printf("Username\n");
@@ -235,15 +237,15 @@ int main(int argc, char* argv[])
 	}
 	char ip[100];
 	strcpy(ip,argv[1]);
-	int a, sfd = makeNode(ip, PORT);
+	int a;
 	while(1)
 	{
 		printf("Do you want to (1) send or (2) receive emails?\n");
 		scanf("%d", &a);
 		if(a==1)
-			smtpClient(sfd);
+			smtpClient(ip);
 		else
-			popClient(sfd);
+			popClient(ip);
 	}
 	return 0;
 }

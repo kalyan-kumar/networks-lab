@@ -133,6 +133,7 @@ int smtpMail(int cfd)
 		}
 	}
 	from=email;
+	cout<<from;
 	if(send(cfd, "250 OK", 6, 0)==-1)
 	{
 		perror("Server write failed");

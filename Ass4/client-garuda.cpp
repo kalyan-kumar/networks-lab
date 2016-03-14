@@ -4,9 +4,11 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <string>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define PORT 21635
+#define POPPORT 21835
 
 int makeNode(const char* src, int port)
 {
@@ -114,10 +116,12 @@ void smtpClient(char *ip)
 	int flag=1;
 	char data[1000];
 	if(sendrecieve("DATA",2,sfd));
+	memset(data,0,1000);
+	fgets(data,1000,stdin);
 	while(1)
 	{	
 		memset(data,0,1000);
-		scanf("%s",data);
+		fgets(data,1000,stdin);
 
 		if(send(sfd, data,strlen(data), 0) == -1)
 		{
@@ -126,7 +130,7 @@ void smtpClient(char *ip)
 		}
 		printf("%s\n",data );
 		sleep(1);
-		if(strcmp(data,".")==0)
+		if(strcmp(data,".\n")==0)
 			break;
  	}
  	printf("sent all\n");
@@ -135,6 +139,7 @@ void smtpClient(char *ip)
 		perror ("Client: Receive failed");
 		exit (1);
 	}
+	printf("%s\n", buf);
 	memset(buf,0,2000);
 
 	
@@ -157,11 +162,13 @@ void smtpClient(char *ip)
 
  int popsend(char buf[],int sfd,int type)
 {
-	if(send(sfd, buf,2000, 0) == -1)
+	printf("%s\n",buf );
+	if(send(sfd, buf,strlen(buf), 0) == -1)
 	{
 		perror("Server write failed");
 		exit(1);
 	}
+	printf("sent\n");
 	char recbuf[2000];
 	if (recv (sfd, recbuf, 2000, 0) == -1)
 	{
@@ -172,30 +179,33 @@ void smtpClient(char *ip)
 	{
 		if(strcmp(recbuf,"wrong Password"))
 		{
-			return 1;
+			return 0;
 		}
 	}
-	else if(strcmp(buf,"OK"))
+	else if(strcmp(recbuf,"OK"))
 	{
 		printf("%s\n",buf );
 	}
-	return 0;
+	printf("%s\n",recbuf );
+	return 1;
 	
 }
 
 void popClient(char* ip)
 {
-	int sfd;
-	char A[100], B[100],buf[2000];
+	int sfd = makeNode(ip, POPPORT);
+	char buf[1000];
+	char A[100],B[100];
 
 	printf("Username\n");
-	scanf("%s\n", A);
-	sprintf(A,"USER: %s",A);
+	scanf("%s", A);
 	popsend(A,sfd,1);
 	printf("Password?\n");
-	scanf("%s\n", B);
-	sprintf(B,"PASS: %s",B);
-	while(popsend(B,sfd,2));
+	scanf("%s", B);
+
+	// sprintf(B,"PASS: %s",B);
+	popsend(B,sfd,2);
+	printf("came here\n");
 	popsend("LIST",sfd,1);
 	// sprintf(buf,"%s,%s",A,B);
 	int flag=1;
@@ -206,9 +216,9 @@ void popClient(char* ip)
 		printf("which one do you want to read\n");
 		int num;
 		scanf("%d",&num);
-		sprintf(sends,"retrieve%d",num);
+		sprintf(sends,"%d",num);
 
-		if(send(sfd, sends,100, 0) == -1)
+		if(send(sfd, sends,strlen(sends), 0) == -1)
 		{
 			perror("Server write failed");
 			exit(1);
@@ -218,6 +228,7 @@ void popClient(char* ip)
 			perror ("Client: Receive failed");
 			exit (1);
 		}
+		printf("%s\n",buf );
 		printf("Enter 1 to read more and 2 to exit\n");
 		int exitnow;
 		scanf("%d",&exitnow);

@@ -31,6 +31,7 @@ sql::ResultSet *res;
 struct popemails
 {
 	string from,to,body;
+	int id;
 
 };
 vector<struct popemails> allemails;
@@ -529,6 +530,7 @@ int popList(int cfd)
 		temp.to=res->getString("to_email");
 		temp.from=res->getString("from_email");
 		temp.body=res->getString("body");
+		temp.id=res->getInt("id");
 		allemails.push_back(temp);
 		to_send=to_string(id)+ " "+temp.to+" "+to_string(temp.body.length())+"\n";
 	}
@@ -559,6 +561,10 @@ int popRetr(int cfd)
 			return 1;
 		struct popemails temp=allemails[atoi(buf)];
 		string sendmail="From : "+temp.from+"\n body : \n"+temp.body+"\n";
+		string a="update "+dom+"set  viewed= 1 where id=?";
+		pstmt=con->prepareStatement(a.c_str());
+		pstmt->setInt(1,temp.id);
+		pstmt->executeQuery();
 		if(send(cfd,sendmail.c_str(), sendmail.length(), 0)==-1)
 		{
 			perror("Server write failed");

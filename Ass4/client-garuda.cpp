@@ -225,6 +225,13 @@ void popClient(char* ip)
 			flag=0;
 
 	}
+	if(send(sfd, "END",4, 0) == -1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+
+
 	
 }
 

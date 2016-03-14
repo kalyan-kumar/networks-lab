@@ -15,19 +15,27 @@
 #include <statement.h>
 #include <prepared_statement.h>
 #include <iostream>
+#include <vector>
 using namespace std;
 
 #define PORT 21635
 
 char direct[1000], file[1000], srvip[1000];
-string dom,to,from;
+string dom,to,from,pop_email;
 int mk_cli, sm_cli;
 FILE *fp;
 sql::Driver *driver;
 sql::Connection *con;
 sql::Statement *stmt;
 sql::ResultSet *res;
+struct popemails
+{
+	string from,to,body;
+
+};
+vector<struct popemails> allemails;
 sql::PreparedStatement *pstmt;
+
 int makeNode(const char* src, int port, int cors)
 {	
 	printf("%s\n",src );
@@ -447,8 +455,11 @@ int popUser(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-	if(strncmp(buf, "user-name", strlen("user-name"))!=0)
-		return -1;
+
+	// if(strncmp(buf, "user-name", strlen("user-name"))!=0)
+	// 	return -1;
+	pop_email=buf;
+	cout<<pop_email<<endl;
 	if(send(cfd, "OK", 2, 0)==-1)
 	{
 		perror("Server write failed");
@@ -470,9 +481,20 @@ int popPass(int cfd)
 	}
 	// if(strncmp(buf, "password", strlen("password"))!=0)
 	// 	return -1;
-	fp = fopen(file, "r");
-	fscanf(fp, "%s", pass);
-	if(strcmp(pass, buf)!=0)
+	// fp = fopen(file, "r");
+	// fscanf(fp, "%s", pass);
+	// if(strcmp(pass, buf)!=0)
+	// 	return -1;
+	string a="select password from userinfo where to_email=?";
+	pstmt=con->prepareStatement(a.c_str());
+	pstmt->setString(1,pop_email);
+	res=pstmt->executeQuery();
+	string password;
+	while(res->next())
+	{
+		password=res->getString("password");
+	}
+	if(strcmp(password.c_str(),buf))
 		return -1;
 	if(send(cfd, "OK", 2, 0)==-1)
 	{
@@ -485,7 +507,7 @@ int popPass(int cfd)
 int popList(int cfd)
 {
 	char buf[1000], pass[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0,1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
@@ -493,13 +515,58 @@ int popList(int cfd)
 	}
 	if(strncmp(buf, "LIST", strlen("LIST"))!=0)
 		return -1;
+	string a="select * from "+dom+"where to_email=? and viewed= ?";
+	pstmt=con->prepareStatement(a.c_str());
+	pstmt->setString(1,pop_email);
+	pstmt->setInt(2,0);
+
+	res=pstmt->executeQuery();
+	string to_send;
+	int id=0;
+	while(res->next())
+	{
+		struct popemails temp;
+		temp.to=res->getString("to_email");
+		temp.from=res->getString("from_email");
+		temp.body=res->getString("body");
+		allemails.push_back(temp);
+		to_send=to_string(id)+ " "+temp.to+" "+to_string(temp.body.length())+"\n";
+	}
+	if(send(cfd, to_send.c_str(), to_send.length(), 0)==-1)
+	{
+		perror("Server write failed");
+		exit(1);
+	}
+
 	//return sql query of all names
 	return 1;
 }
 
 int popRetr(int cfd)
 {
-	return 1;
+	char buf[1000], pass[1000];
+	memset(buf, 1000, 0);
+	while(1)
+	{
+			memset(buf, 1000, 0);
+
+		if(recv(cfd, buf, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		if(strcmp(buf,"END")==0)
+			return 1;
+		struct popemails temp=allemails[atoi(buf)];
+		string sendmail="From : "+temp.from+"\n body : \n"+temp.body+"\n";
+		if(send(cfd,sendmail.c_str(), sendmail.length(), 0)==-1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+	}
+
+
 }
 
 void popServer(char* src)
@@ -586,7 +653,7 @@ int main(int argc, char* argv[])
  	con->setSchema("networks");
  	// stmt=con->createStatement();
  	char exec[100];
- 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),primary key(id))",dom.c_str());
+ 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),viewed int not null,primary key(id))",dom.c_str());
  	stmt->execute(exec);
  	// stmt->execute();}
  }

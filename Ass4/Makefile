@@ -1,10 +1,11 @@
-all: serG cliG
+all: Server client
 
-serG: server-garuda.c
-	gcc server-garuda.c -o serG
+Server: server-garuda.cpp
+	sudo g++ -std=c++11  -g -I/usr/include/cppconn -o Server server-garuda.cpp -L/usr/lib -lmysqlcppconn
 
-cliG: client-garuda.c
-	gcc client-garuda.c -o cliG
+
+client: client-garuda.cpp
+	g++ client-garuda.cpp -o client
 
 clean:
 	rm serG cliG

@@ -19,9 +19,11 @@
 using namespace std;
 
 #define PORT 21635
+#define POPPORT 21835
+#define SMTPCLIENT 21
 
 char direct[1000], file[1000], srvip[1000];
-string dom, to, from, other, pop_email;
+string dom, to, from, other, pop_email, dom1;
 int mk_cli, sm_cli;
 FILE *fp;
 sql::Driver *driver;
@@ -118,26 +120,8 @@ int smtpMail(int cfd)
 	printf("%s\n", buf);
 	if(strncmp(buf, "MAIL FROM:", strlen("MAIL FROM"))!=0)
 		return -1;
-	// File handling code
-	int i, j, x=strlen(buf), flag;
-	for(i=0,j=0,flag=0;i<x;i++)
-	{
-		if(flag==1)
-		{
-			email[j] = buf[i];
-			j++;
-		}
-		else
-		{
-			if(buf[i]==':')
-			{
-				flag = 1;
-				i++;
-			}
-		}
-	}
+	strcpy(email,strchr(buf,':')+2);
 	from=email;
-	cout<<from;
 	if(send(cfd, "250 OK", 6, 0)==-1)
 	{
 		perror("Server write failed");
@@ -149,12 +133,13 @@ int smtpMail(int cfd)
 int smtpRcpt(int cfd)
 {
 	char buf[1000], email[1000], domain[1000], frdom[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
+	printf("%s\n", buf);
 	if(strncmp(buf, "RCPT TO", strlen("RCPT TO"))!=0)
 		return -1;
 	strcpy(email,strchr(buf,':')+2);
@@ -163,15 +148,14 @@ int smtpRcpt(int cfd)
 	strcpy(file, direct);
 	strcat(file, email);
 	to=email;
-	printf("%s\n", domain);
-	printf("%s\n",file );
-	if(strcmp(domain, dom.c_str())!=0)
+	if(strcmp(domain, dom1.c_str())!=0)
 		mk_cli = 1;
 	if(mk_cli==1)
 	{
-		sm_cli = makeNode(other.c_str(), 21834, 1);
+		printf("asdfasdf\n");
+		sm_cli = makeNode(other.c_str(), SMTPCLIENT, 1);
 		char buf1[1000];
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
@@ -182,13 +166,13 @@ int smtpRcpt(int cfd)
 			perror("Server write failed");
 			exit(1);
 		}
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		strcpy(buf1, "MAIL FROM: ");
 		strcat(buf1, from.c_str());
 		if(send(sm_cli, buf1, strlen(buf1), 0)==-1)
@@ -196,7 +180,7 @@ int smtpRcpt(int cfd)
 			perror("Server write failed");
 			exit(1);
 		}
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
@@ -207,16 +191,13 @@ int smtpRcpt(int cfd)
 			perror("Server write failed");
 			exit(1);
 		}
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
 	}
-	fp = fopen(file, "a");
-	fprintf(fp, "from:%s\n", from.c_str());
-	fclose(fp);
 	printf("wrote in file\n");
 	if(send(cfd, "250 OK", 6, 0)==-1)
 	{
@@ -230,7 +211,7 @@ int smtpData(int cfd)
 {
 	char buf[1000], buf1[1000];
 	string message;
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
@@ -244,7 +225,7 @@ int smtpData(int cfd)
 			perror("Server write failed");
 			exit(1);
 		}
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(cfd, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
@@ -253,7 +234,6 @@ int smtpData(int cfd)
 	}
 	if(strncmp(buf, "DATA", strlen("DATA"))!=0)
 		return -1;
-	fp = fopen(file, "a");
 	if(send(cfd, "354 start mail input", 20, 0)==-1)
 	{
 		perror("Server write failed");
@@ -278,19 +258,14 @@ int smtpData(int cfd)
 				exit(1);
 			}
 		}
-		// printf("%s\n",file );
-		// Write mail content to file here
-		fprintf(fp, "%s\n", buf);
-	}while(strcmp(buf, ".")!=0);
-	string a="INSERT INTO "+dom+"(from_email,to_email,body) VALUES(?,?,?)";
+	}while(strcmp(buf, ".\n")!=0);
+	string a="INSERT INTO "+dom+"(from_email,to_email,body,viewed) VALUES(?,?,?,?)";
 	pstmt=con->prepareStatement(a.c_str());
 	pstmt->setString(1,from);
 	pstmt->setString(2,to);
 	pstmt->setString(3,message);
+	pstmt->setInt(4,0);
 	pstmt->execute();
-
-	// fprintf(fp, "Termination sequence\n\n");
-	fclose(fp);
 	memset(buf1, 0, 1000);
 	if(mk_cli==1){
 	if(recv(sm_cli, buf1, 1000, 0) == -1)
@@ -309,7 +284,7 @@ int smtpData(int cfd)
 int smtpQuit(int cfd)
 {
 	char buf[1000], buf1[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
@@ -333,7 +308,7 @@ int smtpQuit(int cfd)
 	if(mk_cli==1)
 	{
 		char buf1[1000];
-		memset(buf1, 1000, 0);
+		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf, strlen(buf), 0)==-1)
 		{
 			perror("Server write failed");
@@ -410,17 +385,15 @@ void smtpServer(char* src)
 int popUser(int cfd)
 {
 	char buf[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-
-	// if(strncmp(buf, "user-name", strlen("user-name"))!=0)
-	// 	return -1;
+	printf("%s\n", buf);
 	pop_email=buf;
-	cout<<pop_email<<endl;
+	cout << pop_email << endl;
 	if(send(cfd, "OK", 2, 0)==-1)
 	{
 		perror("Server write failed");
@@ -433,20 +406,16 @@ int popUser(int cfd)
 
 int popPass(int cfd)
 {
+	printf("Came to password\n");
 	char buf[1000], pass[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-	// if(strncmp(buf, "password", strlen("password"))!=0)
-	// 	return -1;
-	// fp = fopen(file, "r");
-	// fscanf(fp, "%s", pass);
-	// if(strcmp(pass, buf)!=0)
-	// 	return -1;
-	string a="select password from userinfo where to_email=?";
+	printf("%s\n", buf);
+	string a="select password from passwords where email=?";
 	pstmt=con->prepareStatement(a.c_str());
 	pstmt->setString(1,pop_email);
 	res=pstmt->executeQuery();
@@ -474,9 +443,12 @@ int popList(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
+	printf("%s\n", buf);
 	if(strncmp(buf, "LIST", strlen("LIST"))!=0)
 		return -1;
-	string a="select * from "+dom+"where to_email=? and viewed= ?";
+	cout << dom << endl;
+	cout << pop_email << endl;
+	string a="select * from "+dom+" where to_email=? and viewed= ?";
 	pstmt=con->prepareStatement(a.c_str());
 	pstmt->setString(1,pop_email);
 	pstmt->setInt(2,0);
@@ -486,58 +458,56 @@ int popList(int cfd)
 	int id=0;
 	while(res->next())
 	{
+		printf("HEHHHE\n");
 		struct popemails temp;
 		temp.to=res->getString("to_email");
 		temp.from=res->getString("from_email");
 		temp.body=res->getString("body");
 		temp.id=res->getInt("id");
 		allemails.push_back(temp);
-		to_send=to_string(id)+ " "+temp.to+" "+to_string(temp.body.length())+"\n";
+		to_send=to_string(id)+ " "+temp.from+" "+to_string(temp.body.length())+"\n";
 	}
+	printf("%s\n", to_send.c_str());
 	if(send(cfd, to_send.c_str(), to_send.length(), 0)==-1)
 	{
 		perror("Server write failed");
 		exit(1);
 	}
-
-	//return sql query of all names
 	return 1;
 }
 
 int popRetr(int cfd)
 {
 	char buf[1000], pass[1000];
-	memset(buf, 1000, 0);
+	memset(buf, 0, 1000);
 	while(1)
 	{
-			memset(buf, 1000, 0);
-
+		memset(buf, 0, 1000);
 		if(recv(cfd, buf, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
+		printf("%s\n", buf);
 		if(strcmp(buf,"END")==0)
 			return 1;
 		struct popemails temp=allemails[atoi(buf)];
 		string sendmail="From : "+temp.from+"\n body : \n"+temp.body+"\n";
-		string a="update "+dom+"set  viewed= 1 where id=?";
-		pstmt=con->prepareStatement(a.c_str());
-		pstmt->setInt(1,temp.id);
-		pstmt->executeQuery();
 		if(send(cfd,sendmail.c_str(), sendmail.length(), 0)==-1)
 		{
 			perror("Server write failed");
 			exit(1);
 		}
+		string a="update "+dom+" set viewed= 1 where id=?";
+		pstmt=con->prepareStatement(a.c_str());
+		pstmt->setInt(1,temp.id);
+		pstmt->executeQuery();
 	}
-
-
 }
 
 void popServer(char* src)
 {
-	int sfd = makeNode(src, 21555, 0);
+	int sfd = makeNode(src, POPPORT, 0);
 	struct sockaddr_in cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&cli_addr, 0, addrlen);
@@ -545,6 +515,7 @@ void popServer(char* src)
 	while(1)
 	{
 		int cfd = accept(sfd, (struct sockaddr *) &cli_addr, &addrlen);
+		printf("GOT IT\n");
 		if(cfd==-1)
 		{
 			perror("Server: Accept failed");
@@ -558,22 +529,22 @@ void popServer(char* src)
 		}
 		else if(child==0)
 		{
-			if(popUser(cfd)==-1);
+			if(popUser(cfd)==-1)
 			{
 				perror("username is expected");
 				exit(1);
 			}
-			if(popPass(cfd)==-1);
+			if(popPass(cfd)==-1)
 			{
 				perror("password is expected");
 				exit(1);
 			}
-			if(popList(cfd)==-1);
+			if(popList(cfd)==-1)
 			{
 				perror("list is expected");
 				exit(1);
 			}
-			if(popRetr(cfd)==-1);
+			if(popRetr(cfd)==-1)
 			{
 				perror("retrieve is expected");
 				exit(1);
@@ -606,8 +577,9 @@ int main(int argc, char* argv[])
 	try {
 		driver = get_driver_instance();
 		dom = argv[2];
+		dom1 = dom;
 		dom = replaceStrChar(dom,".",'_');
-		cout << dom;
+		cout << dom1;
 	 	con = driver->connect("tcp://127.0.0.1:3306", "root", "user12");
 	 	printf("connected\n");
 	 	
@@ -616,7 +588,7 @@ int main(int argc, char* argv[])
 	  	/* Connect to the MySQL test database */
 	 	con->setSchema("networks");
 	 	char exec[100];
-	 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),primary key(id))",dom.c_str());
+	 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),viewed int not null, primary key(id))",dom.c_str());
 	 	stmt->execute(exec);
  	}
  	catch (sql::SQLException &e) {

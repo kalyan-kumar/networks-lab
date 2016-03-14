@@ -20,7 +20,7 @@ using namespace std;
 #define PORT 21635
 
 char direct[1000], file[1000], srvip[1000];
-string dom,to,from;
+string dom, to, from, other;
 int mk_cli, sm_cli;
 FILE *fp;
 sql::Driver *driver;
@@ -29,7 +29,7 @@ sql::Statement *stmt;
 sql::ResultSet *res;
 sql::PreparedStatement *pstmt;
 int makeNode(const char* src, int port, int cors)
-{	
+{
 	printf("%s\n",src );
 	int sfd, reuse_addr = 1;
 	struct sockaddr_in srv_addr;
@@ -82,21 +82,18 @@ int smtpHelo(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-			printf("%s\n",buf );
-
+	printf("%s\n",buf );
 	if(strcmp(buf, "HELO")!=0)
 	{
 		fprintf(stderr,"here\n");
 		return -1;
 	}
-		printf("%s\n",buf );
-
+	printf("%s\n",buf );
 	if(send(cfd, "250 OK", 7, 0)==-1)
 	{
 		perror("Server write failed");
 		exit(1);
 	}
-
 	return 1;
 }
 
@@ -104,14 +101,12 @@ int smtpMail(int cfd)
 {
 	char buf[2000], email[1000];
 	memset(buf, 0, 2000);
-	printf("here2\n");
 	if(recv(cfd, buf, 2000, 0) == -1)
 	{
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-		printf("%s\n", buf);
-
+	printf("%s\n", buf);
 	if(strncmp(buf, "MAIL FROM:", strlen("MAIL FROM"))!=0)
 		return -1;
 	// File handling code
@@ -144,7 +139,7 @@ int smtpMail(int cfd)
 
 int smtpRcpt(int cfd)
 {
-	char buf[1000], email[1000], domain[1000];
+	char buf[1000], email[1000], domain[1000], frdom[1000];
 	memset(buf, 1000, 0);
 	if(recv(cfd, buf, 1000, 0) == -1)
 	{
@@ -155,98 +150,65 @@ int smtpRcpt(int cfd)
 		return -1;
 	strcpy(email,strchr(buf,':')+2);
 	strcpy(domain,strchr(buf,'@')+1);
-	// int i, j, x=strlen(buf), flag;
-	// for(i=0,j=0,flag=0;i<x;i++)
-	// {
-	// 	if(flag==1)
-	// 	{
-	// 		email[j] = buf[i];
-	// 		j++;
-	// 	}
-	// 	else
-	// 	{
-	// 		if(buf[i]==':')
-	// 		{
-	// 			flag = 1;
-	// 			i++;
-	// 		}
-	// 	}
-	// }
-	// email[j] = '\0';
+	
 	strcpy(file, direct);
 	strcat(file, email);
 	to=email;
-	// x = strlen(email);
-	// for(i=0,j=0,flag=0;i<x;i++)
-	// {
-	// 	if(flag==1)
-	// 	{
-	// 		domain[j] = email[i];
-	// 		j++;
-	// 	}
-	// 	else
-	// 	{
-	// 		if(email[i]=='@')
-	// 			flag = 1;
-	// 	}
-	// }
-	// domain[j] = '\0';
 	printf("%s\n", domain);
 	printf("%s\n",file );
-	// if(strcmp(domain, srvip)!=0)
-	// 	mk_cli = 1;
-	// if(mk_cli==1)
-	// {
-	// 	sm_cli = makeNode(domain, 21834, 1);
-	// 	char buf1[1000];
-	// 	memset(buf1, 1000, 0);
-	// 	if(recv(sm_cli, buf1, 1000, 0) == -1)
-	// 	{
-	// 		printf("Didnt get what the client requested for\n");
-	// 		exit(1);
-	// 	}
-	// 	if(send(sm_cli, strcat("HELO: ", domain), 6+strlen(domain), 0)==-1)
-	// 	{
-	// 		perror("Server write failed");
-	// 		exit(1);
-	// 	}
-	// 	memset(buf1, 1000, 0);
-	// 	if(recv(sm_cli, buf1, 1000, 0) == -1)
-	// 	{
-	// 		printf("Didnt get what the client requested for\n");
-	// 		exit(1);
-	// 	}
-	// 	memset(buf1, 1000, 0);
-	// 	strcpy(buf1, "MAIL FROM: ");
-	// 	strcat(buf1, from);
-	// 	if(send(sm_cli, buf1, strlen(buf1), 0)==-1)
-	// 	{
-	// 		perror("Server write failed");
-	// 		exit(1);
-	// 	}
-	// 	memset(buf1, 1000, 0);
-	// 	if(recv(sm_cli, buf1, 1000, 0) == -1)
-	// 	{
-	// 		printf("Didnt get what the client requested for\n");
-	// 		exit(1);
-	// 	}
-	// 	if(send(sm_cli, buf, 6+strlen(domain), 0)==-1)
-	// 	{
-	// 		perror("Server write failed");
-	// 		exit(1);
-	// 	}
-	// 	memset(buf1, 1000, 0);
-	// 	if(recv(sm_cli, buf1, 1000, 0) == -1)
-	// 	{
-	// 		printf("Didnt get what the client requested for\n");
-	// 		exit(1);
-	// 	}
-	// }
-	// fp = fopen(file, "a");
-	// fprintf(fp, "from:%s\n", from);
-	// fclose(fp);
+	if(strcmp(domain, dom.c_str())!=0)
+		mk_cli = 1;
+	if(mk_cli==1)
+	{
+		sm_cli = makeNode(other.c_str(), 21834, 1);
+		char buf1[1000];
+		memset(buf1, 1000, 0);
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		if(send(sm_cli, strcat("HELO: ", domain), 6+strlen(domain), 0)==-1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		memset(buf1, 1000, 0);
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		memset(buf1, 1000, 0);
+		strcpy(buf1, "MAIL FROM: ");
+		strcat(buf1, from.c_str());
+		if(send(sm_cli, buf1, strlen(buf1), 0)==-1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		memset(buf1, 1000, 0);
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+		if(send(sm_cli, buf, strlen(buf), 0)==-1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		memset(buf1, 1000, 0);
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+	}
+	fp = fopen(file, "a");
+	fprintf(fp, "from:%s\n", from.c_str());
+	fclose(fp);
 	printf("wrote in file\n");
-	
 	if(send(cfd, "250 OK", 6, 0)==-1)
 	{
 		perror("Server write failed");
@@ -266,20 +228,20 @@ int smtpData(int cfd)
 		exit(1);
 	}
 	printf("here\n");
-	// if(mk_cli==1)
-	// {
-	// 	if(send(sm_cli, buf, strlen(buf), 0)==-1)
-	// 	{
-	// 		perror("Server write failed");
-	// 		exit(1);
-	// 	}
-	// 	memset(buf1, 1000, 0);
-	// 	if(recv(cfd, buf1, 1000, 0) == -1)
-	// 	{
-	// 		printf("Didnt get what the client requested for\n");
-	// 		exit(1);
-	// 	}
-	// }
+	if(mk_cli==1)
+	{
+		if(send(sm_cli, buf, strlen(buf), 0)==-1)
+		{
+			perror("Server write failed");
+			exit(1);
+		}
+		memset(buf1, 1000, 0);
+		if(recv(cfd, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
+	}
 	if(strncmp(buf, "DATA", strlen("DATA"))!=0)
 		return -1;
 	fp = fopen(file, "a");
@@ -297,8 +259,8 @@ int smtpData(int cfd)
 			exit(1);
 		}
 		printf("%s\n", buf);
-		message+=buf;
-		message+="\n";
+		message += buf;
+		message += "\n";
 		if(mk_cli==1)
 		{
 			if(send(sm_cli, buf, strlen(buf), 0)==-1)
@@ -379,7 +341,7 @@ int smtpQuit(int cfd)
 
 void smtpServer(char* src)
 {
-	int sfd = makeNode(src,PORT, 0), cfd;
+	int sfd = makeNode(src, PORT, 0), cfd;
 	struct sockaddr_in cli_addr;
 	socklen_t addrlen = sizeof(struct sockaddr_in);
 	memset(&cli_addr, 0, addrlen);
@@ -406,12 +368,11 @@ void smtpServer(char* src)
 				perror("Server write failed");
 				exit(1);
 			}
-			if( smtpHelo(cfd) == -1)
+			if(smtpHelo(cfd) == -1)
 			{
-				perror("HEasdasdLO is expected");
+				perror("HELO is expected");
 				exit(1);
 			}
-			printf("here\n");
 			if(smtpMail(cfd)==-1)
 			{
 				perror("MAIL FROM is expected");
@@ -432,7 +393,6 @@ void smtpServer(char* src)
 				perror("QUIT is expected");
 				exit(1);
 			}
-			printf("came here\n");
 			exit(1);
 		}
 	}
@@ -548,58 +508,53 @@ void popServer(char* src)
 		}
 	}
 }
+
 string replaceStrChar(string str, const string& replace, char ch) {
 
-  // set our locator equal to the first appearance of any character in replace
-  size_t i = str.find_first_of(replace);
-  int found;
-  str[i]=ch;
-  // while (found != string::npos) { // While our position in the sting is in range.
-  //   str[found] = ch; // Change the character at position.
-  //   found = str.find_first_of(replace, found+1); // Relocate again.
-  // }
+	// set our locator equal to the first appearance of any character in replace
+	size_t i = str.find_first_of(replace);
+	int found;
+	str[i]=ch;
+	// while (found != string::npos) { // While our position in the sting is in range.
+	//   str[found] = ch; // Change the character at position.
+	//   found = str.find_first_of(replace, found+1); // Relocate again.
+	// }
 
-  return str; // return our new string.
+	return str; // return our new string.
 }
+
 int main(int argc, char* argv[])
 {
-	if(argc != 3)
+	if(argc != 4)
 	{
-		printf("Run the executable in <exec-path> <IP-of-server> format\n");
+		printf("Run the executable in <exec-path> <IP-of-server> <domain-of-server> <IP-of-other-server>format\n");
 		return 0;
 	}
-	try{
-	 driver = get_driver_instance();
-		dom=argv[2];
-		// dom=argv[2];
-		// char *c=strchr(dom,'.');
-		dom=replaceStrChar(dom,".",'_');
-		cout<< dom;
- 	con = driver->connect("tcp://127.0.0.1:3306", "root", "bruno18");
- 	printf("connected\n");
- 	// pstmt=con->prepareStatement("CREATE DATABASE IF NOT EXISTS networks;");
- 	// pstmt->execute();
- 	stmt = con->createStatement();
-  	stmt->execute("CREATE DATABASE IF NOT EXISTS networks");
-  	/* Connect to the MySQL test database */
-
- 	con->setSchema("networks");
- 	// stmt=con->createStatement();
- 	char exec[100];
- 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),primary key(id))",dom.c_str());
- 	stmt->execute(exec);
- 	// stmt->execute();}
- }
+	try {
+		driver = get_driver_instance();
+		dom = argv[2];
+		dom = replaceStrChar(dom,".",'_');
+		cout << dom;
+	 	con = driver->connect("tcp://127.0.0.1:3306", "root", "user12");
+	 	printf("connected\n");
+	 	
+	 	stmt = con->createStatement();
+	  	stmt->execute("CREATE DATABASE IF NOT EXISTS networks");
+	  	/* Connect to the MySQL test database */
+	 	con->setSchema("networks");
+	 	char exec[100];
+	 	sprintf(exec,"CREATE TABLE IF NOT EXISTS %s (id int not null auto_increment,from_email varchar(50),to_email varchar(50),body varchar(5000),primary key(id))",dom.c_str());
+	 	stmt->execute(exec);
+ 	}
  	catch (sql::SQLException &e) {
-	  cout << "# ERR: SQLException in " << __FILE__;
-	  cout << "(" << __FUNCTION__ << ") on line "
-	     << __LINE__ << endl;
-	  cout << "# ERR: " << e.what();
-	  cout << " (MySQL error code: " << e.getErrorCode();
-	  cout << ", SQLState: " << e.getSQLState() << " )" << endl;
-
+		cout << "# ERR: SQLException in " << __FILE__;
+		cout << "(" << __FUNCTION__ << ") on line " << __LINE__ << endl;
+		cout << "# ERR: " << e.what();
+		cout << " (MySQL error code: " << e.getErrorCode();
+		cout << ", SQLState: " << e.getSQLState() << " )" << endl;
 	}
 
+	other = argv[3];
 	strcpy(direct, "./Data/");
 	strcat(direct, argv[1]);
 	strcat(direct, "/");

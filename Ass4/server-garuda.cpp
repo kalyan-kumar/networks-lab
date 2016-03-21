@@ -153,7 +153,7 @@ int smtpRcpt(int cfd)
 	if(mk_cli==1)
 	{
 		printf("asdfasdf\n");
-		sm_cli = makeNode(other.c_str(), SMTPCLIENT, 1);
+		sm_cli = makeNode(other.c_str(), PORT, 1);
 		char buf1[1000];
 		memset(buf1, 0, 1000);
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
@@ -161,7 +161,8 @@ int smtpRcpt(int cfd)
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
-		if(send(sm_cli, strcat("HELO: ", domain), 6+strlen(domain), 0)==-1)
+		printf("%s\n", buf1);
+		if(send(sm_cli, "HELO", 4, 0)==-1)
 		{
 			perror("Server write failed");
 			exit(1);
@@ -197,6 +198,7 @@ int smtpRcpt(int cfd)
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
+		printf("%s\n", buf1);
 	}
 	printf("wrote in file\n");
 	if(send(cfd, "250 OK", 6, 0)==-1)
@@ -225,12 +227,16 @@ int smtpData(int cfd)
 			perror("Server write failed");
 			exit(1);
 		}
+		usleep(50);
 		memset(buf1, 0, 1000);
-		if(recv(cfd, buf1, 1000, 0) == -1)
+		printf("Hammayya\n");
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
 			exit(1);
 		}
+		printf("%s\n", buf1);
+		printf("%s\n", buf);
 	}
 	if(strncmp(buf, "DATA", strlen("DATA"))!=0)
 		return -1;
@@ -258,7 +264,7 @@ int smtpData(int cfd)
 				exit(1);
 			}
 		}
-	}while(strcmp(buf, ".\n")!=0);
+	}while(strcmp(buf, ".")!=0);
 	string a="INSERT INTO "+dom+"(from_email,to_email,body,viewed) VALUES(?,?,?,?)";
 	pstmt=con->prepareStatement(a.c_str());
 	pstmt->setString(1,from);
@@ -267,17 +273,22 @@ int smtpData(int cfd)
 	pstmt->setInt(4,0);
 	pstmt->execute();
 	memset(buf1, 0, 1000);
-	if(mk_cli==1){
-	if(recv(sm_cli, buf1, 1000, 0) == -1)
+	printf("mk client = %d\n", mk_cli);
+	if(mk_cli==1)
 	{
-		printf("Didnt get what the client requested for\n");
-		exit(1);
-	}}
-	if(send(cfd, "250 OK", 7, 0)==-1)
-	{
-		perror("Server write failed");
-		exit(1);
+		if(recv(sm_cli, buf1, 1000, 0) == -1)
+		{
+			printf("Didnt get what the client requested for\n");
+			exit(1);
+		}
 	}
+	if(send(cfd, "250 OK", 6, 0)!=-1)
+	{
+		printf("yo\n");
+		// perror("Server write failed");
+		// exit(1);
+	}
+	printf("sent it\n");
 	return 1;
 }
 
@@ -290,6 +301,7 @@ int smtpQuit(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
+	printf("came here\n");
 	if(mk_cli==1)
 	{
 		if(send(sm_cli, buf, strlen(buf), 0)==-1)
@@ -372,6 +384,7 @@ void smtpServer(char* src)
 				perror("DATA is expected");
 				exit(1);
 			}
+			printf("Random \n");
 			if(smtpQuit(cfd)==-1)
 			{
 				perror("QUIT is expected");
@@ -465,7 +478,8 @@ int popList(int cfd)
 		temp.body=res->getString("body");
 		temp.id=res->getInt("id");
 		allemails.push_back(temp);
-		to_send=to_string(id)+ " "+temp.from+" "+to_string(temp.body.length())+"\n";
+		to_send+=to_string(id)+ " "+temp.from+" "+to_string(temp.body.length())+"\n";
+		id++;
 	}
 	printf("%s\n", to_send.c_str());
 	if(send(cfd, to_send.c_str(), to_send.length(), 0)==-1)

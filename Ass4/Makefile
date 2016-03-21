@@ -8,4 +8,4 @@ cliG: client-garuda.cpp
 	g++ client-garuda.cpp -o cliG
 
 clean:
-	rm serG cliG
+	sudo rm serG cliG

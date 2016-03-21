@@ -18,9 +18,9 @@
 #include <vector>
 using namespace std;
 
-#define PORT 21635
-#define POPPORT 21835
-#define SMTPCLIENT 21735
+#define PORT 21735
+#define POPPORT 21935
+#define SMTPCLIENT 21635
 
 char direct[1000], file[1000], srvip[1000];
 string dom, to, from, other, pop_email, dom1;

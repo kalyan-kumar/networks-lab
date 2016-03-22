@@ -5,10 +5,12 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string>
+#include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #define PORT 21635
 #define POPPORT 21835
+using namespace std;
 
 int makeNode(const char* src, int port)
 {
@@ -248,22 +250,41 @@ void popClient(char* ip)
 
 int main(int argc, char* argv[])
 {
-	if(argc < 2)
+	if(argc < 4)
 	{
 		printf("Pass arguments correctly\n");
 		exit(0);
 	}
-	char ip[100];
+	char ip[100],ip2[100];
 	strcpy(ip,argv[1]);
-	int a;
-	while(1)
+	strcpy(ip2,argv[2]);
+	int check=atoi(argv[3]);
+	if(check==0)
 	{
-		printf("Do you want to (1) send or (2) receive emails?\n");
-		scanf("%d", &a);
-		if(a==1)
-			smtpClient(ip);
+		cout<<"how many accounts do you have? (1 or 2)"<<endl;
+		int a;
+		cin>>a;
+		int pid;
+		if(a==2)
+			pid=fork();
+		if(pid)
+		{
+			while(1)
+			{
+				printf("Do you want to (1) send or (2) receive emails?\n");
+				scanf("%d", &a);
+				if(a==1)
+					smtpClient(ip);
+				else
+					popClient(ip);
+			}
+		}
 		else
-			popClient(ip);
+		{
+			char arg[100];
+			memset(arg,0,100);
+			sprintf(arg,"xterm -hold -e ./cliG %s %s 1",ip2,ip);
+		}
 	}
 	return 0;
 }

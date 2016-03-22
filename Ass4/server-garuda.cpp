@@ -219,7 +219,6 @@ int smtpData(int cfd)
 		printf("Didnt get what the client requested for\n");
 		exit(1);
 	}
-	printf("here\n");
 	if(mk_cli==1)
 	{
 		if(send(sm_cli, buf, strlen(buf), 0)==-1)
@@ -229,7 +228,6 @@ int smtpData(int cfd)
 		}
 		usleep(50);
 		memset(buf1, 0, 1000);
-		printf("Hammayya\n");
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
 		{
 			printf("Didnt get what the client requested for\n");
@@ -264,7 +262,7 @@ int smtpData(int cfd)
 				exit(1);
 			}
 		}
-	}while(strcmp(buf, ".")!=0);
+	}while(strcmp(buf, ".\n")!=0);
 	string a="INSERT INTO "+dom+"(from_email,to_email,body,viewed) VALUES(?,?,?,?)";
 	pstmt=con->prepareStatement(a.c_str());
 	pstmt->setString(1,from);
@@ -273,7 +271,6 @@ int smtpData(int cfd)
 	pstmt->setInt(4,0);
 	pstmt->execute();
 	memset(buf1, 0, 1000);
-	printf("mk client = %d\n", mk_cli);
 	if(mk_cli==1)
 	{
 		if(recv(sm_cli, buf1, 1000, 0) == -1)
@@ -593,9 +590,8 @@ int main(int argc, char* argv[])
 		dom = argv[2];
 		dom1 = dom;
 		dom = replaceStrChar(dom,".",'_');
-		cout << dom1;
+		cout << dom1 << " connected\n";
 	 	con = driver->connect("tcp://127.0.0.1:3306", "root", "user12");
-	 	printf("connected\n");
 	 	
 	 	stmt = con->createStatement();
 	  	stmt->execute("CREATE DATABASE IF NOT EXISTS networks");

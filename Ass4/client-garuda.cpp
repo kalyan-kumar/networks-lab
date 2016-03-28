@@ -177,6 +177,8 @@ void smtpClient(char *ip)
 		perror ("Client: Receive failed");
 		exit (1);
 	}
+	if(strcmp(recbuf, "empty")==0)
+		return 0;
 	if(type==2)
 	{
 		if(strcmp(recbuf,"wrong Password"))
@@ -208,9 +210,14 @@ void popClient(char* ip)
 	// sprintf(B,"PASS: %s",B);
 	popsend(B,sfd,2);
 	printf("came here\n");
-	popsend("LIST",sfd,1);
+	
 	// sprintf(buf,"%s,%s",A,B);
-	int flag=1;
+	int flag=popsend("LIST",sfd,1);
+	printf("Enter 1 to read more and 2 to exit\n");
+	int exitnow;
+	scanf("%d",&exitnow);
+	if(exitnow)
+		flag=0;
 	// int flag2=0;
 	while(flag)
 	{	
@@ -232,7 +239,6 @@ void popClient(char* ip)
 		}
 		printf("%s\n",buf );
 		printf("Enter 1 to read more and 2 to exit\n");
-		int exitnow;
 		scanf("%d",&exitnow);
 		if(exitnow)
 			flag=0;

@@ -479,6 +479,8 @@ int popList(int cfd)
 		id++;
 	}
 	printf("%s\n", to_send.c_str());
+	if(to_send.length() == 0)
+		to_send = "empty";
 	if(send(cfd, to_send.c_str(), to_send.length(), 0)==-1)
 	{
 		perror("Server write failed");
